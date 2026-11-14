@@ -1,0 +1,25 @@
+# build output
+bin/
+/toolgate
+
+# local data (never commit)
+*.db
+*.db-*
+*.db*
+first-run.txt
+admin.token
+master.key
+outputs/
+data/
+*.log
+log.txt
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# local notes for Claude Code
+CLAUDE.local.md
+.claude/worktrees/
+/agent-gateway

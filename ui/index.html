@@ -1,0 +1,2086 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toolgate</title>
+<style>
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --sunken:#F6F8FA; --ink:#18212F; --ink2:#3A4556; --mute:#6A7586; --line:#DCE1E7; --line2:#E8ECF0;
+  --acc:#2F4BD8; --acc-ink:#FFFFFF; --acc-soft:#E8ECFC;
+  --ok:#17845A; --ok-soft:#E3F3EB; --warn:#A86A12; --warn-soft:#FBF0DC; --bad:#BE3A16; --bad-soft:#FBE7E1;
+  --r-sm:6px; --r:10px; --r-lg:14px;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
+  --shadow:0 1px 2px rgba(24,33,47,.06),0 8px 24px rgba(24,33,47,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0F141B; --surface:#161D26; --sunken:#1B232E; --ink:#E6EBF2; --ink2:#C3CBD6; --mute:#8893A3; --line:#2A3441; --line2:#222B36;
+  --acc:#7D93FF; --acc-ink:#0F141B; --acc-soft:#202A4A;
+  --ok:#4CC28C; --ok-soft:#14291F; --warn:#E3A84A; --warn-soft:#2E2414; --bad:#F07E5C; --bad-soft:#331A13;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-size:12.5px}
+.mute{color:var(--mute)} .small{font-size:12.5px}
+.grow{flex:1;min-width:0}
+input.switch,.check input.switch{width:34px;height:20px;margin:0;padding:0}
+form + .panel,.panel + form,form + details,.panel + details{margin-top:16px}
+.sheet-in:focus{outline:none}
+h1{font-size:22px;line-height:1.25;margin:0;font-weight:650;letter-spacing:-.015em}
+h2{font-size:15px;margin:0;font-weight:650}
+h3{font-size:14px;margin:0;font-weight:600}
+p{margin:0}
+
+/* shell */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;padding:18px 12px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px;font-weight:650;font-size:14.5px}
+.brand svg{flex:none}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--ink2);font-weight:500;text-decoration:none}
+.nav a svg{width:18px;height:18px;color:var(--mute);flex:none}
+.nav a:hover{background:var(--line2)}
+.nav a.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(24,33,47,.08)}
+.nav a.on svg{color:var(--acc)}
+.nav .count{margin-left:auto;font-size:11.5px;font-weight:650;min-width:20px;height:20px;padding:0 6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--warn-soft);color:var(--warn)}
+.side .foot{margin-top:auto;padding:10px;font-size:12px;color:var(--mute);display:flex;gap:8px;align-items:center}
+.side .langsw{align-self:flex-start;margin:2px 10px 0;padding:2px}.langsw button{height:22px;padding:0 8px;font-size:11.5px;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mute);flex:none;display:inline-block}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+main{min-width:0;padding:28px 36px 80px;max-width:1080px}
+.head{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.head .lede{color:var(--mute);margin-top:4px;max-width:62ch}
+.head .actions{margin-left:auto;display:flex;gap:8px}
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--mute);font-size:13px;margin-bottom:12px}
+
+/* controls */
+button,.btn{font:inherit;font-weight:500;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap;text-decoration:none}
+button:hover,.btn:hover{border-color:var(--mute);text-decoration:none}
+button svg,.btn svg{width:16px;height:16px}
+.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.pri:hover{filter:brightness(1.08);border-color:var(--acc)}
+.ghost{border-color:transparent;background:transparent}
+.ghost:hover{background:var(--line2);border-color:transparent}
+.danger{color:var(--bad)}
+button:disabled{opacity:.55;cursor:default}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+textarea{font-family:var(--mono);font-size:12.5px;min-height:120px;resize:vertical}
+label.f{display:block;font-weight:550;margin:14px 0 5px;font-size:13px}
+label.f .hint{font-weight:400;color:var(--mute)}
+.help{color:var(--mute);font-size:12.5px;margin-top:5px}
+.switch{position:relative;width:34px;height:20px;flex:none;appearance:none;-webkit-appearance:none;border-radius:10px;background:var(--line);border:0;padding:0;cursor:pointer;transition:background .15s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch:checked{background:var(--acc)} .switch:checked::after{transform:translateX(14px)}
+.seg{display:inline-flex;background:var(--line2);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{height:28px;border:0;background:transparent;color:var(--ink2);padding:0 11px;border-radius:7px}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(24,33,47,.1)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:600;background:var(--line2);color:var(--ink2);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.acc{background:var(--acc-soft);color:var(--acc)}
+.pill .dot{width:6px;height:6px;background:currentColor}
+
+/* surfaces */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
+.panel + .panel{margin-top:16px}
+.panel-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line2)}
+.rows > .r{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line2);min-width:0}
+.rows > .r:first-child{border-top:0}
+.rows > a.r{color:inherit;text-decoration:none} .rows > a.r:hover{background:var(--sunken)}
+.r .main{flex:1;min-width:0} .r .main b{font-weight:600}
+.r .sub{color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r .meta{color:var(--mute);font-size:12.5px;text-align:right;white-space:nowrap}
+.chev{color:var(--mute);width:16px;height:16px;flex:none}
+.ico{display:inline-flex;flex:none;border-radius:9px;overflow:hidden;background:#fff;border:1px solid var(--line);align-items:center;justify-content:center}
+.ico img{width:66%;height:66%;object-fit:contain}
+.ico .fb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.empty{padding:40px 24px;text-align:center;color:var(--mute)}
+.empty h2{color:var(--ink);margin-bottom:6px}
+.callout{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);margin:0 0 14px}
+.callout.bad{background:var(--bad-soft)} .callout.ok{background:var(--ok-soft)} .callout.info{background:var(--acc-soft)}
+.callout .grow{flex:1;min-width:0}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--sunken);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin:8px 0 0;overflow:auto;white-space:pre-wrap;word-break:break-word;max-height:380px}
+.copyline{display:flex;gap:8px;align-items:stretch}
+.copyline pre{flex:1;margin:0}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:22px 0 18px}
+.tabs a{padding:8px 12px;color:var(--mute);font-weight:550;border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none}
+.tabs a.on{color:var(--ink);border-color:var(--acc)}
+.tabs a .n{font-weight:500;color:var(--mute);margin-left:4px}
+
+/* switchboard */
+.board{padding:6px 6px 2px;overflow:hidden}
+.board svg{display:block;width:100%;height:auto}
+.board text{font:500 12.5px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;fill:var(--ink)}
+.board .lbl2{font-size:11px;fill:var(--mute)}
+.board .wire{fill:none;stroke-width:1.6}
+.board .live{stroke:var(--acc)} .board .idle{stroke:var(--line);stroke-dasharray:3 4}
+.board .ok{stroke:var(--ok)} .board .warn{stroke:var(--warn);stroke-dasharray:5 4} .board .bad{stroke:var(--bad);stroke-dasharray:2 4} .board .off{stroke:var(--line);stroke-dasharray:2 5}
+.board .node{fill:var(--surface);stroke:var(--line)}
+.board .hub{fill:var(--ink)} .board .hubt{fill:var(--bg);font-weight:650}
+.board .jack{stroke:var(--surface);stroke-width:2}
+@media (prefers-reduced-motion:no-preference){.board .live{stroke-dasharray:6 6;animation:flow 1.6s linear infinite}}
+@keyframes flow{to{stroke-dashoffset:-24}}
+
+/* catalog */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.toolbar input[type=search]{flex:1;min-width:220px;height:38px;font-size:14.5px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:10px}
+.tile{display:flex;gap:12px;padding:14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);cursor:pointer;min-width:0;text-align:left;height:auto;font-weight:400;align-items:flex-start;white-space:normal}
+.tile:hover{border-color:var(--acc)}
+.tile .t{flex:1;min-width:0}
+.tile b{font-weight:600;overflow-wrap:anywhere}
+.tile .d{color:var(--mute);font-size:12.5px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .m{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;font-size:12px;color:var(--mute)}
+
+/* tools */
+.tool{border-top:1px solid var(--line2);padding:11px 18px}
+.tool:first-child{border-top:0}
+.tool .top{display:flex;gap:12px;align-items:flex-start}
+.tool .name{font-family:var(--mono);font-size:13px;font-weight:600}
+.tool .desc{color:var(--mute);font-size:12.5px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tool.off .name,.tool.off .desc{opacity:.5}
+.runner{margin-top:10px;padding:12px;background:var(--sunken);border-radius:var(--r);border:1px solid var(--line2)}
+.pg-f{margin-bottom:12px}.pg-f label.f{margin:0 0 4px}.pg-f .req{color:var(--bad)}.pg-f .ty{font-family:var(--mono);font-size:11.5px;color:var(--mute);font-weight:400;margin-left:6px}
+.pg-f textarea{min-height:64px}.pg-out img,.pg-out audio{max-width:100%;margin-top:10px;display:block}
+.pg-head{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+
+/* activity */
+.day{font-size:12.5px;font-weight:600;color:var(--mute);padding:18px 2px 8px}
+.ev{display:grid;grid-template-columns:52px 18px 1fr auto;gap:10px;align-items:start;padding:9px 18px;border-top:1px solid var(--line2)}
+.ev:first-child{border-top:0}
+.ev .time{color:var(--mute);font-size:12.5px;font-variant-numeric:tabular-nums}
+.ev .what{min-width:0}
+.ev details summary{cursor:pointer;list-style:none}
+.ev details summary::-webkit-details-marker{display:none}
+.ev .ms{color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums}
+
+/* sheet & dialogs */
+dialog{border:0;padding:0;background:transparent;color:var(--ink);max-width:none;max-height:none}
+dialog::backdrop{background:rgba(15,20,27,.32)}
+dialog.sheet{position:fixed;inset:0 0 0 auto;margin:0;height:100vh;width:min(560px,100vw)}
+.sheet-in{height:100%;background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.sheet-h{display:flex;gap:14px;align-items:center;padding:20px 24px 16px;border-bottom:1px solid var(--line2)}
+.sheet-b{flex:1;overflow:auto;padding:4px 24px 24px}
+.sheet-f{display:flex;gap:8px;justify-content:flex-end;padding:14px 24px;border-top:1px solid var(--line2);background:var(--surface)}
+@media (prefers-reduced-motion:no-preference){dialog.sheet[open] .sheet-in{animation:slide .18s ease-out}}
+@keyframes slide{from{transform:translateX(24px);opacity:.6}}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r);margin-top:8px;cursor:pointer}
+.opt.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.opt input{width:auto;margin-top:3px}
+ol.steps{margin:10px 0 0;padding-left:20px;color:var(--ink2);font-size:13px} ol.steps li{margin:5px 0}
+.flow{display:flex;gap:14px;align-items:center;padding:16px;border-radius:var(--r);background:var(--sunken);margin-top:16px}
+.flow.ok{background:var(--ok-soft)} .flow.bad{background:var(--bad-soft)}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;flex:none}
+@media (prefers-reduced-motion:no-preference){.spin{animation:sp .8s linear infinite}}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:50;box-shadow:var(--shadow);max-width:90vw}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 14px;padding:16px 18px;font-size:13px}
+.kv dt{color:var(--mute)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+details.adv{margin-top:18px} details.adv summary{cursor:pointer;color:var(--mute);font-size:13px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer;font-size:13.5px}
+.check input:not(.switch){width:auto;margin-top:3px}
+.tree{border:1px solid var(--line);border-radius:var(--r);margin-top:10px;max-height:340px;overflow:auto}
+.tree .srv{padding:8px 12px;border-top:1px solid var(--line2)} .tree .srv:first-child{border-top:0}
+.tree .tl{padding-left:28px}
+
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .side{position:sticky;top:0;z-index:5;height:auto;flex-direction:row;align-items:center;padding:8px 10px;overflow-x:auto;background:var(--bg);border-right:0;border-bottom:1px solid var(--line)}
+  .brand{padding:0 8px 0 2px}.brand span{display:none}
+  .nav{display:flex;gap:2px}.nav a{padding:7px 9px;white-space:nowrap}
+  .side .foot{display:none}
+  main{padding:20px 16px 60px}
+  .grid2{grid-template-columns:1fr}
+  .r .meta{display:none}
+  .kv{grid-template-columns:1fr}
+  .board{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7" fill="var(--ink)"/><circle cx="7" cy="8" r="2" fill="var(--bg)"/><circle cx="7" cy="18" r="2" fill="var(--bg)"/><circle cx="19" cy="13" r="2.4" fill="var(--acc)"/><path d="M9 8c4 0 5 5 8 5M9 18c4 0 5-5 8-5" stroke="var(--bg)" stroke-width="1.4" fill="none"/></svg>
+      <span>Toolgate</span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot" id="foot"><span class="dot ok"></span><span>localhost</span></div>
+    <div class="seg langsw" id="langsw" role="group"></div>
+  </aside>
+  <main id="app"></main>
+</div>
+<dialog id="dlg"></dialog>
+<script>
+// ---------------------------------------------------------------- basics
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const enc = encodeURIComponent;
+
+// ---------------------------------------------------------------- i18n
+// English is the source language. TR (defined near the end) maps English UI
+// strings to Turkish; t() falls back to English for anything missing.
+// {name} placeholders let the word order differ between languages.
+const LANGS = ['en', 'tr'];
+let LANG = (() => {
+  try { const s = localStorage.getItem('agw_lang'); if (LANGS.includes(s)) return s; } catch {}
+  return /^tr/i.test(navigator.language || '') ? 'tr' : 'en';
+})();
+const LOCALE = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
+function t(s, vars) {
+  let out = LANG === 'tr' && Object.prototype.hasOwnProperty.call(TR, s) ? TR[s] : s;
+  if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m);
+  return out;
+}
+// pl picks the English singular/plural form; Turkish maps both to one string
+const pl = (n, one, other, vars) => t(n === 1 ? one : other, { n, ...vars });
+// lazy builds a label table on every access, so it follows the current language
+const lazy = f => new Proxy({}, {
+  get: (_, k) => f()[k], has: (_, k) => k in f(), ownKeys: () => Reflect.ownKeys(f()),
+  getOwnPropertyDescriptor: (_, k) => { const o = f(); return k in o ? { value: o[k], writable: true, enumerable: true, configurable: true } : undefined; },
+});
+function setLang(l, save = true) {
+  LANG = LANGS.includes(l) ? l : 'en';
+  document.documentElement.lang = LANG;
+  if (save) { try { localStorage.setItem('agw_lang', LANG); } catch {} }
+}
+function renderLangSwitch() {
+  const el = $('#langsw'); if (!el) return;
+  el.setAttribute('aria-label', t('Language'));
+  el.innerHTML = [['en', 'EN', 'English'], ['tr', 'TR', 'Türkçe']].map(([k, l, full]) => `<button type="button" data-lang="${k}" lang="${k}" title="${full}" aria-pressed="${LANG === k}" class="${LANG === k ? 'on' : ''}">${l}</button>`).join('');
+  $$('[data-lang]', el).forEach(b => b.onclick = () => {
+    if (b.dataset.lang === LANG) return;
+    setLang(b.dataset.lang); renderLangSwitch();
+    const d = $('#dlg'); if (d.open) d.close();
+    if (AUTHED) refreshCounts();
+    route();
+  });
+}
+let AUTHED = false;
+try { localStorage.removeItem('agw_admin'); } catch {}
+
+const I = {
+  plug: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2v4M13 2v4M5 6h10v3a5 5 0 0 1-10 0V6ZM10 14v4"/></svg>',
+  compass: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="m12.8 7.2-1.6 4-4 1.6 1.6-4 4-1.6Z" stroke-linejoin="round"/></svg>',
+  bot: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="6" width="13" height="10" rx="3"/><path d="M10 3v3M7.5 11h.01M12.5 11h.01"/></svg>',
+  key: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="12" r="3.5"/><path d="m9.5 9.5 7-7M14 5l2 2M12 7l1.5 1.5"/></svg>',
+  pulse: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10h3.5l2-5 4 10 2-5H18"/></svg>',
+  plus: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m8 5 5 5-5 5"/></svg>',
+  back: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m12 5-5 5 5 5"/></svg>',
+  ext: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M11 4h5v5M16 4l-7 7M14 12v4H4V6h4"/></svg>',
+  refresh: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M16 10a6 6 0 1 1-2-4.5M16 3v4h-4"/></svg>',
+  play: '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5-9-5.5Z"/></svg>',
+  copy: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="7" width="9" height="9" rx="2"/><path d="M4 13V5a1 1 0 0 1 1-1h8"/></svg>',
+  check: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>',
+  x: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m5 5 10 10M15 5 5 15"/></svg>',
+};
+
+async function api(method, path, body) {
+  const r = await fetch(path, { method, credentials: 'same-origin', headers: { 'X-AGW': '1', 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && !path.startsWith('/api/login')) { AUTHED = false; showLogin(); throw new Error(t('Login required')); }
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+function toast(msg) {
+  $$('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+function relTime(ts) {
+  if (!ts) return '';
+  const s = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (s < 60) return t('just now');
+  if (s < 3600) return `${t('{n} min ago', { n: Math.floor(s / 60) })}`;
+  if (s < 86400) return `${t('{n} h ago', { n: Math.floor(s / 3600) })}`;
+  if (s < 86400 * 30) return pl(Math.floor(s / 86400), '{n} day ago', '{n} days ago');
+  return new Date(ts).toLocaleDateString(LOCALE());
+}
+function iconHTML(name, host, size = 36) {
+  name = (name || '?').trim();
+  const hue = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  const fb = `<span class="fb" style="background:hsl(${hue} 55% 93%);color:hsl(${hue} 45% 30%);font-size:${Math.round(size * .42)}px">${esc(name[0] || '?').toUpperCase()}</span>`;
+  if (!host) return `<span class="ico" style="width:${size}px;height:${size}px">${fb}</span>`;
+  return `<span class="ico" style="width:${size}px;height:${size}px"><img src="/ui/icon/${enc(host)}" alt="" loading="lazy" onerror="this.outerHTML=this.nextElementSibling.innerHTML"><template>${fb}</template></span>`;
+}
+function copyBtn(text) { return `<button type="button" class="ghost" data-copy="${esc(text)}" title="${t('Copy')}">${I.copy}</button>`; }
+function bindCopy(root = document) {
+  $$('[data-copy]', root).forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); toast(t('Copied')); } catch { toast(t('Couldn\'t copy; select it manually')); }
+  });
+}
+
+// ---------------------------------------------------------------- status model
+function statusOf(s) {
+  const st = s.status.status;
+  if (!s.config.enabled) return { key: 'off', tone: '', label: t('Off'), wire: 'off' };
+  if (s.pending_approval) return { key: 'approval', tone: 'warn', label: t('Awaiting approval'), wire: 'warn', need: t('An agent changed the command this connection runs or the address its credentials are sent to. It stays off until you approve.') };
+  if ((s.tool_changes || []).length) return { key: 'approval', tone: 'warn', label: t('Tools changed'), wire: 'warn', need: pl(s.tool_changes.length, '{n} tool is new or has a changed description/schema. Agents can\'t see or call it until you review and approve.', '{n} tools are new or have a changed description/schema. Agents can\'t see or call them until you review and approve.') };
+  if ((s.missing_secrets || []).length) return { key: 'secrets', tone: 'warn', label: t('Credentials missing'), wire: 'warn', need: t('The credentials needed to connect are not in the vault.') };
+  if (s.status.auth_issue === 'client_required') return { key: 'client', tone: 'warn', label: t('OAuth client required'), wire: 'warn', need: t('This service doesn\'t support automatic client registration. Enter an OAuth client (Client ID and secret) once under Settings.') };
+  if (st === 'auth_required') return { key: 'auth', tone: 'warn', label: t('Sign-in needed'), wire: 'warn', need: t('You need to sign in with your account.') };
+  if (st === 'error') return { key: 'error', tone: 'bad', label: t('Can\'t connect'), wire: 'bad', need: s.status.error || t('Connection error.') };
+  if (st === 'connecting') return { key: 'connecting', tone: 'acc', label: t('Connecting'), wire: 'warn' };
+  if (s.needs_login) return { key: 'auth', tone: 'warn', label: t('Not signed in'), wire: 'warn', need: t('The service lists its tools, but you haven\'t signed in, so they won\'t work.') };
+  if (st === 'connected') return { key: 'live', tone: 'ok', label: t('Connected'), wire: 'ok' };
+  if (s.tool_count > 0) return { key: 'ready', tone: 'ok', label: t('Ready'), wire: 'ok' };
+  return { key: 'new', tone: '', label: t('Not connected yet'), wire: 'off', need: t('Hasn\'t connected yet.') };
+}
+const pill = (tone, label) => `<span class="pill ${tone}"><span class="dot"></span>${esc(label)}</span>`;
+
+// ---------------------------------------------------------------- router
+let PENDING_TOKEN = '';
+const ALIASES = { '': 'connections', overview: 'connections', servers: 'connections', catalog: 'discover', secrets: 'vault', audit: 'activity', test: 'connections' };
+function readHash() {
+  let h = location.hash.slice(1);
+  if (/^(token|lang)=/.test(h)) {
+    const p = new URLSearchParams(h);
+    if (p.get('token')) PENDING_TOKEN = p.get('token');
+    if (LANGS.includes(p.get('lang'))) { setLang(p.get('lang'), false); renderLangSwitch(); }
+    h = p.get('go') || 'connections';
+    history.replaceState(null, '', '#' + h);
+  }
+  const [path, qs] = h.split('?');
+  const parts = path.split('/');
+  let route = parts[0]; route = ALIASES[route] ?? route;
+  return { route, arg: parts.slice(1).map(decodeURIComponent).join('/'), params: new URLSearchParams(qs || '') };
+}
+const NAV = () => [['connections', t('Connections'), I.plug], ['discover', t('Discover'), I.compass], ['agents', t('Agents'), I.bot], ['vault', t('Vault'), I.key], ['activity', t('Activity'), I.pulse]];
+let COUNTS = {};
+function renderNav(active) {
+  $('#nav').innerHTML = NAV().map(([k, l, ic]) => `<a href="#${k}" class="${active === k || (k === 'connections' && active === 'c') ? 'on' : ''}">${ic}<span>${l}</span>${COUNTS[k] ? `<span class="count" title="${t('Needs attention')}">${COUNTS[k]}</span>` : ''}</a>`).join('');
+}
+async function refreshCounts() {
+  try {
+    const [servers, secrets, st] = await Promise.all([api('GET', '/api/servers'), api('GET', '/api/secrets'), api('GET', '/api/status')]);
+    COUNTS = { connections: servers.filter(s => statusOf(s).need && s.config.enabled && !['new', 'connecting'].includes(statusOf(s).key)).length, vault: secrets.filter(s => !s.has_value).length };
+    $('#foot').innerHTML = `<span class="dot ok"></span><span class="grow">${esc(st.base_url.replace('http://', ''))} · v${esc(st.version)}</span><button class="ghost small" id="lo" style="height:26px;padding:0 8px">${t('Log out')}</button>`;
+    $('#lo').onclick = logout;
+    renderNav(readHash().route);
+  } catch {}
+}
+async function showLogin() {
+  renderNav('');
+  $('#foot').innerHTML = '';
+  let sess = { password_set: false };
+  try { sess = await (await fetch('/api/session', { credentials: 'same-origin' })).json(); } catch {}
+  $('#app').innerHTML = `<div class="panel" style="max-width:460px;margin:64px auto;padding:28px">
+    <h1>${t('Admin panel')}</h1>
+    ${sess.password_set ? `<p class="mute" style="margin:8px 0 6px">${t('Sign in with your gateway password.')}</p>
+      <form id="lf"><label class="f" for="pw">${t('Password')}</label><input id="pw" type="password" autocomplete="current-password" autofocus required>
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center"><button class="pri">${t('Sign in')}</button><span id="lerr" class="small" style="color:var(--bad)"></span></div></form>`
+    : `<p class="mute" style="margin:8px 0 14px">${t('No panel password has been set yet. In a terminal, get a one-time sign-in link or set a password with:')}</p>
+      <div class="copyline"><pre>toolgate admin-url</pre>${copyBtn('toolgate admin-url')}</div>
+      <div class="copyline" style="margin-top:8px"><pre>toolgate set-password</pre>${copyBtn('toolgate set-password')}</div>`}
+  </div>`;
+  bindCopy();
+  const f = $('#lf');
+  if (f) f.onsubmit = async e => {
+    e.preventDefault();
+    const r = await fetch('/api/login', { method: 'POST', credentials: 'same-origin', headers: { 'X-AGW': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) });
+    if (r.ok) { AUTHED = true; refreshCounts(); route(); }
+    else { const d = await r.json().catch(() => ({})); $('#lerr').textContent = d.error || t('Sign-in failed'); $('#pw').select(); }
+  };
+}
+async function ensureSession() {
+  if (PENDING_TOKEN) {
+    const t = PENDING_TOKEN; PENDING_TOKEN = '';
+    await fetch('/api/login', { method: 'POST', credentials: 'same-origin', headers: { 'X-AGW': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) }).catch(() => {});
+  }
+  try { const s = await (await fetch('/api/session', { credentials: 'same-origin' })).json(); AUTHED = !!s.authenticated; } catch { AUTHED = false; }
+  return AUTHED;
+}
+async function logout() { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-AGW': '1' } }); AUTHED = false; showLogin(); }
+const views = {};
+async function route() {
+  const h = readHash();
+  if (!AUTHED && !(await ensureSession())) return showLogin();
+  renderNav(h.route);
+  const v = views[h.route] || views.connections;
+  try {
+    const html = await v(h);
+    if (html !== undefined) $('#app').innerHTML = html;
+    if (v.after) v.after(h);
+    bindCopy($('#app'));
+  } catch (e) { if (AUTHED) $('#app').innerHTML = `<div class="callout bad"><div class="grow">${esc(e.message)}</div></div>`; }
+}
+window.addEventListener('hashchange', () => { route(); });
+
+// ---------------------------------------------------------------- sheet / dialog
+function openSheet(html, onMount) {
+  const d = $('#dlg'); d.className = 'sheet';
+  d.innerHTML = `<div class="sheet-in" tabindex="-1">${html}</div>`;
+  if (!d.open) d.showModal();
+  $('.sheet-in', d).focus();
+  $$('[data-close]', d).forEach(b => b.onclick = () => d.close());
+  d.onclick = e => { if (e.target === d) d.close(); };
+  bindCopy(d);
+  onMount && onMount(d);
+  return d;
+}
+
+// ---------------------------------------------------------------- connect / login flow
+function needsLoginPopup(cfg) { return cfg.transport === 'http' && cfg.auth !== 'none' && !(cfg.headers && cfg.headers.Authorization); }
+function openBlankPopup() {
+  const w = window.open('', '_blank');
+  if (w) { try { w.document.write(`<title>${t('Sign-in')}</title><p style="font:15px -apple-system,system-ui;padding:32px;color:#555">${t('Preparing the sign-in page…')}</p>`); } catch {} }
+  return w;
+}
+async function waitConnected(id, alive, mode = 'connect') {
+  const start = Date.now();
+  while (Date.now() - start < 15 * 60 * 1000) {
+    await new Promise(r => setTimeout(r, 2000));
+    if (!alive()) return { cancelled: true };
+    const list = await api('GET', '/api/servers').catch(() => null);
+    if (!list) continue;
+    const s = list.find(x => x.config.id === id);
+    if (!s) return { error: t('The connection was deleted.') };
+    if (mode === 'login' && s.has_oauth_token) return { tools: s.tool_count };
+    if (mode !== 'login' && s.status.status === 'connected' && s.tool_count > 0) return { tools: s.tool_count };
+    if (s.status.auth_issue === 'client_required') return { client_required: true, error: t('This service doesn\'t support automatic client registration; enter an OAuth client under Settings.') };
+    if (s.status.status === 'error') return { error: s.status.error || t('Connection error.') };
+  }
+  return { error: t('Sign-in wasn\'t completed within 15 minutes. Try again.') };
+}
+// Runs the connect flow inside element `box` (in a sheet or page).
+async function connectFlow(box, id, name, popup, alive = () => true, mode = 'connect') {
+  const set = html => { box.innerHTML = html; bindCopy(box); };
+  set(`<div class="flow"><span class="spin"></span><div>${t('Connecting {name}…', { name: esc(name) })}</div></div>`);
+  let r;
+  try { r = await api('POST', `/api/servers/${enc(id)}/${mode === 'login' ? 'login' : 'connect'}`); }
+  catch (e) { if (popup) popup.close(); return set(`<div class="flow bad"><div><b>${t('Couldn\'t connect.')}</b> ${esc(e.message)}</div></div>`), { error: e.message }; }
+  if (r.auth_url) {
+    if (popup && !popup.closed) popup.location.href = r.auth_url; else window.open(r.auth_url, '_blank');
+    set(`<div class="flow"><span class="spin"></span><div class="grow"><b>${t('Sign in on the tab that just opened')}</b><div class="mute small">${t('Once you approve the {name} consent screen, the connection completes here on its own.', { name: esc(name) })}</div>
+      <div style="margin-top:10px"><a class="btn" target="_blank" href="${esc(r.auth_url)}">${I.ext} ${t('Reopen the sign-in page')}</a></div></div></div>`);
+    r = await waitConnected(id, alive, mode);
+    if (r.cancelled) return r;
+  } else if (popup) popup.close();
+  if (r.client_required) { set(`<div class="flow bad"><div class="grow"><b>${t('OAuth client required.')}</b> <span class="small">${esc(r.error)}</span><div style="margin-top:10px"><a class="btn" href="#c/${enc(id)}?tab=settings">${t('Go to Settings')}</a></div></div></div>`); return { error: r.error }; }
+  if (r.logged_in) { set(`<div class="flow ok"><span style="color:var(--ok);width:22px;height:22px">${I.check}</span><div><b>${t('Signed in to {name}', { name: esc(name) })}</b></div></div>`); refreshCounts(); return r; }
+  if (r.error) { set(`<div class="flow bad"><div><b>${t('Couldn\'t connect.')}</b> <span class="small">${esc(r.error)}</span></div></div>`); return r; }
+  set(`<div class="flow ok"><span style="color:var(--ok);width:22px;height:22px">${I.check}</span><div><b>${t('{name} connected', { name: esc(name) })}</b><div class="small mute">${pl(r.tools, '{n} tool is now available to agents.', '{n} tools are now available to agents.')}</div></div></div>`);
+  refreshCounts();
+  return r;
+}
+
+// ---------------------------------------------------------------- switchboard
+function boardSVG(agents, servers) {
+  const W = 900, rowH = 34, maxRows = 7;
+  const A = agents.slice(0, maxRows), S = servers.slice(0, maxRows);
+  const moreA = agents.length - A.length, moreS = servers.length - S.length;
+  const nA = Math.max(A.length + (moreA ? 1 : 0), 1), nS = Math.max(S.length + (moreS ? 1 : 0), 1);
+  const H = Math.max(nA, nS, 3) * rowH + 20;
+  const yA = i => 10 + (H - 20 - nA * rowH) / 2 + i * rowH + rowH / 2;
+  const yS = i => 10 + (H - 20 - nS * rowH) / 2 + i * rowH + rowH / 2;
+  const hx = W / 2, hy = H / 2, ax = 210, sx = W - 210;
+  const now = Date.now();
+  let g = '';
+  A.forEach((a, i) => {
+    const live = a.last_seen && now - new Date(a.last_seen).getTime() < 15 * 60 * 1000;
+    const y = yA(i);
+    g += `<path class="wire ${live ? 'live' : 'idle'}" d="M${ax} ${y} C ${ax + 110} ${y}, ${hx - 140} ${hy}, ${hx - 46} ${hy}"/>`;
+    g += `<text x="${ax - 14}" y="${y + 4}" text-anchor="end">${esc(a.name || a.id)}</text><text class="lbl2" x="${ax - 14}" y="${y + 17}" text-anchor="end">${live ? t('active now') : a.last_seen ? relTime(a.last_seen) : t('never connected')}</text>`;
+    g += `<circle class="jack" cx="${ax}" cy="${y}" r="4.5" fill="${live ? 'var(--acc)' : 'var(--line)'}"/>`;
+  });
+  if (moreA) g += `<text class="lbl2" x="${ax - 14}" y="${yA(A.length) + 4}" text-anchor="end">${pl(moreA, '+{n} agent', '+{n} agents')}</text>`;
+  if (!A.length) g += `<text class="lbl2" x="${ax - 14}" y="${hy + 4}" text-anchor="end">${t('no agents yet')}</text>`;
+  S.forEach((s, i) => {
+    const st = statusOf(s), y = yS(i);
+    const col = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)', off: 'var(--line)' }[st.wire];
+    g += `<path class="wire ${st.wire}" d="M${hx + 46} ${hy} C ${hx + 140} ${hy}, ${sx - 110} ${y}, ${sx} ${y}"/>`;
+    g += `<circle class="jack" cx="${sx}" cy="${y}" r="4.5" fill="${col}"/>`;
+    g += `<a href="#c/${enc(s.config.id)}"><text x="${sx + 14}" y="${y + 4}">${esc(s.config.name)}</text><text class="lbl2" x="${sx + 14}" y="${y + 17}">${esc(st.label.toLowerCase())}${s.exposed_count ? ` · ${pl(s.exposed_count, '{n} tool', '{n} tools')}` : ''}</text></a>`;
+  });
+  if (moreS) g += `<text class="lbl2" x="${sx + 14}" y="${yS(S.length) + 4}">${pl(moreS, '+{n} connection', '+{n} connections')}</text>`;
+  if (!S.length) g += `<text class="lbl2" x="${sx + 14}" y="${hy + 4}">${t('no connections yet')}</text>`;
+  g += `<rect class="hub" x="${hx - 46}" y="${hy - 20}" width="92" height="40" rx="10"/><text class="hubt" x="${hx}" y="${hy + 4}" text-anchor="middle">gateway</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(pl(servers.length, 'Agents reach {n} connection through the gateway', 'Agents reach {n} connections through the gateway'))}">${g}</svg>`;
+}
+
+// ---------------------------------------------------------------- Connections
+views.connections = async () => {
+  const [servers, agents, st] = await Promise.all([api('GET', '/api/servers'), api('GET', '/api/agents'), api('GET', '/api/status')]);
+  const attention = servers.filter(s => s.config.enabled && ['approval', 'secrets', 'auth', 'client', 'error'].includes(statusOf(s).key));
+  const neverConnected = !agents.some(a => a.last_seen);
+  const actBtn = s => {
+    const k = statusOf(s).key;
+    if (k === 'secrets') return `<a class="btn pri" href="#vault?new=${enc(s.missing_secrets[0])}">${t('Enter credentials')}</a>`;
+    if (k === 'auth') return `<button class="pri" data-login="${esc(s.config.id)}">${t('Sign in')}</button>`;
+    if (k === 'client') return `<a class="btn pri" href="#c/${enc(s.config.id)}?tab=settings">${t('Enter OAuth client')}</a>`;
+    if (k === 'approval') return `<button class="pri" data-approve="${esc(s.config.id)}">${t('Review')}</button>`;
+    return `<a class="btn" href="#c/${enc(s.config.id)}">${t('Review')}</a>`;
+  };
+  views.connections.after = () => {
+    $$('[data-approve]').forEach(b => b.onclick = () => approvalSheet(servers.find(x => x.config.id === b.dataset.approve)));
+    $$('[data-login]').forEach(b => b.onclick = () => {
+      const s = servers.find(x => x.config.id === b.dataset.login);
+      const popup = openBlankPopup();
+      const d = openSheet(`<div class="sheet-h">${iconHTML(s.config.name, s.icon, 40)}<div class="grow"><h2>${esc(s.config.name)}</h2><div class="mute small">${t('Sign-in')}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div><div class="sheet-b"><div id="flow"></div></div><div class="sheet-f"><button data-close>${t('Close')}</button></div>`);
+      connectFlow($('#flow', d), s.config.id, s.config.name, popup, () => d.open, 'login').then(() => route());
+    });
+  };
+  const rows = servers.map(s => {
+    const stt = statusOf(s);
+    const used = s.calls_24h ? pl(s.calls_24h, '{n} call in 24h', '{n} calls in 24h') : s.last_call ? `${t('last used {when}', { when: relTime(s.last_call) })}` : t('not used yet');
+    return `<a class="r" href="#c/${enc(s.config.id)}">${iconHTML(s.config.name, s.icon, 34)}
+      <div class="main"><b>${esc(s.config.name)}</b><div class="sub">${esc(s.config.description || (s.config.transport === 'http' ? s.config.url : s.config.command))}</div></div>
+      ${pill(stt.tone, stt.label)}
+      <div class="meta" style="width:150px">${s.exposed_count ? pl(s.exposed_count, '{n} tool', '{n} tools') : '—'}<br><span class="small">${used}</span></div>${I.chev}</a>`;
+  }).join('');
+  return `<div class="head"><div><h1>${t('Connections')}</h1><p class="lede">${t('Your agents know a single address: <span class="mono">{url}/mcp</span>. Every service behind it is listed here.', { url: esc(st.base_url) })}</p></div>
+      <div class="actions"><a class="btn pri" href="#discover">${I.plus} ${t('Add connection')}</a></div></div>
+    <div class="panel board">${boardSVG(agents, servers)}</div>
+    ${neverConnected ? `<div class="callout info" style="margin-top:16px"><div class="grow"><b>${t('No agent has connected yet.')}</b> ${t('Get the command to connect Claude Code or another agent on the Agents page.')}</div><a class="btn" href="#agents">${t('Agents')}</a></div>` : ''}
+    ${attention.length ? `<div class="panel" style="margin-top:16px"><div class="panel-h"><h2>${t('Waiting on you')}</h2><span class="pill warn">${attention.length}</span></div><div class="rows">
+      ${attention.map(s => `<div class="r">${iconHTML(s.config.name, s.icon, 30)}<div class="main"><b>${esc(s.config.name)}</b><div class="sub">${esc(statusOf(s).need)}</div></div>${actBtn(s)}</div>`).join('')}</div></div>` : ''}
+    <div class="panel" style="margin-top:16px"><div class="panel-h"><h2>${t('All connections')}</h2><span class="mute small">${servers.length}</span></div>
+      ${servers.length ? `<div class="rows">${rows}</div>` : `<div class="empty"><h2>${t('No connections yet')}</h2><p>${t('Add GitHub, Cloudflare, a database, or any of the 300+ services in the Claude directory.')}</p><p style="margin-top:14px"><a class="btn pri" href="#discover">${I.compass} ${t('Go to Discover')}</a></p></div>`}</div>`;
+};
+
+// ---------------------------------------------------------------- Connection detail
+views.c = async ({ arg, params }) => {
+  const id = arg, tab = params.get('tab') || 'tools';
+  const servers = await api('GET', '/api/servers');
+  const s = servers.find(x => x.config.id === id);
+  if (!s) return `<a class="back" href="#connections">${I.back} ${t('Connections')}</a><div class="empty"><h2>${t('No such connection')}</h2><p>${t('It may have been deleted.')}</p></div>`;
+  const c = s.config, stt = statusOf(s);
+  const tabs = [['tools', t('Tools'), s.tool_count], ['settings', t('Settings')], ['activity', t('Activity'), s.calls_24h || '']];
+  let body = '';
+  if (tab === 'tools') body = await toolsTab(s);
+  else if (tab === 'settings') body = settingsTab(s);
+  else body = await activityList({ server: id, limit: 150 });
+  const primary = stt.key === 'approval' ? `<button class="pri" id="apv">${t('Review and approve')}</button>`
+    : stt.key === 'auth' ? `<button class="pri" id="cn" data-mode="login">${t('Sign in')}</button>`
+    : stt.key === 'client' ? `<a class="btn pri" href="#c/${enc(id)}?tab=settings">${t('Enter OAuth client')}</a>`
+    : stt.key === 'secrets' ? `<a class="btn pri" href="#vault?new=${enc(s.missing_secrets[0])}">${t('Enter credentials')}</a>`
+    : c.enabled ? `<button id="cn">${I.refresh} ${stt.key === 'live' || stt.key === 'ready' ? t('Refresh') : t('Connect')}</button>` : '';
+  views.c.after = () => {
+    const apv = $('#apv'); if (apv) apv.onclick = () => approvalSheet(s);
+    if (apv && params.get('review')) { history.replaceState(null, '', `#c/${enc(id)}`); approvalSheet(s); }
+    const cn = $('#cn');
+    if (cn) cn.onclick = () => {
+      const popup = needsLoginPopup(c) && (stt.key !== 'live' || cn.dataset.mode === 'login') ? openBlankPopup() : null;
+      const box = $('#cflow'); box.hidden = false;
+      connectFlow(box, id, c.name, popup, () => true, cn.dataset.mode || 'connect').then(r => { if (!r.error && !r.cancelled) setTimeout(route, 900); });
+    };
+    $('#tog').onchange = async e => { await api('POST', '/api/servers', { ...c, enabled: e.target.checked }); toast(e.target.checked ? t('Turned on') : t('Turned off')); route(); };
+    if (tab === 'tools') bindToolsTab(s);
+    if (tab === 'settings') bindSettingsTab(s);
+    bindActivity($('#app'));
+  };
+  return `<a class="back" href="#connections">${I.back} ${t('Connections')}</a>
+    <div class="head" style="align-items:center;margin-bottom:0">${iconHTML(c.name, s.icon, 48)}
+      <div style="min-width:0"><h1>${esc(c.name)}</h1><div class="mute small" style="margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${pill(stt.tone, stt.label)}<span class="mono">${esc(c.id)}</span></div></div>
+      <div class="actions" style="align-items:center"><label class="check" style="padding:0;margin-right:6px" title="${t('Agents cannot see a connection that is off')}"><input type="checkbox" class="switch" id="tog" ${c.enabled ? 'checked' : ''}> <span class="small">${c.enabled ? t('On') : t('Off')}</span></label>${primary}</div></div>
+    ${stt.need && c.enabled && stt.key !== 'new' ? `<div class="callout ${stt.tone === 'bad' ? 'bad' : ''}" style="margin-top:16px"><div class="grow">${esc(stt.need)}</div></div>` : ''}
+    <div id="cflow" hidden></div>
+    <nav class="tabs">${tabs.map(([k, l, n]) => `<a href="#c/${enc(id)}?tab=${k}" class="${tab === k ? 'on' : ''}">${l}${n ? `<span class="n">${n}</span>` : ''}</a>`).join('')}</nav>
+    ${body}`;
+};
+
+async function toolsTab(s) {
+  const tools = await api('GET', `/api/servers/${enc(s.config.id)}/tools`);
+  window.__tools = tools;
+  if (!tools.length) return `<div class="panel"><div class="empty"><h2>${t('No tool list yet')}</h2><p>${t('Once connected, this service\'s tools are listed here.')}</p></div></div>`;
+  const agents = await api('GET', '/api/agents');
+  window.__agents = agents;
+  const ro = t => t.annotations && t.annotations.readOnlyHint, de = t => t.annotations && t.annotations.destructiveHint;
+  return `<div class="toolbar"><input type="search" id="tq" placeholder="${t('Search tools')}" style="height:34px;font-size:14px">
+      <div class="seg" role="group" aria-label="${t('Bulk selection')}"><button id="allOn">${t('Turn all on')}</button><button id="roOnly">${t('Only read-only')}</button></div></div>
+    <p class="help" style="margin:-6px 0 12px">${t('No agent can see the tools you turn off. For per-agent limits, use the Agents page.')}</p>
+    <div class="panel" id="toollist">${tools.map(tl => `<div class="tool ${tl.exposed ? '' : 'off'}" data-name="${esc(tl.name)}">
+      <div class="top"><input type="checkbox" class="switch" data-t="${esc(tl.name)}" ${tl.exposed ? 'checked' : ''} aria-label="${t('{name} enabled', { name: esc(tl.name) })}">
+        <div class="grow" style="min-width:0"><div class="row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="name">${esc(tl.name)}</span>${tl.pending && tl.exposed ? `<span class="pill warn">${tl.pending === 'new' ? t('new, awaiting approval') : t('changed, awaiting approval')}</span>` : ''}${ro(tl) ? `<span class="pill">${t('read-only')}</span>` : ''}${de(tl) ? `<span class="pill bad">${t('destructive')}</span>` : ''}</div>
+          <div class="desc">${esc(tl.description || '')}</div></div>
+        ${tl.pending ? `<button class="ghost" disabled title="${t('Review and approve the change first')}">${I.play} ${t('Try')}</button>` : `<button class="ghost" data-run="${esc(tl.name)}">${I.play} ${t('Try')}</button>`}</div><div class="rbox"></div></div>`).join('')}</div>`;
+}
+// ---- playground: a form generated from the tool's input schema ----
+const PG_LONG = /(body|content|text|query|sql|code|prompt|message|markdown|html|script|description)$/i;
+function pgType(p) {
+  let t = p.type;
+  if (Array.isArray(t)) t = t.find(x => x !== 'null') || t[0];
+  if (!t && (p.anyOf || p.oneOf)) { const alt = (p.anyOf || p.oneOf).find(x => x.type && x.type !== 'null'); if (alt) return pgType({ ...alt, description: p.description }); }
+  if (!t && p.enum) t = 'string';
+  if (!t && p.properties) t = 'object';
+  if (t === 'array') { const it = p.items || {}; const itt = Array.isArray(it.type) ? it.type[0] : it.type; return ['string', 'number', 'integer'].includes(itt) && !it.enum ? 'list:' + itt : 'json'; }
+  return ['string', 'number', 'integer', 'boolean'].includes(t) ? t : 'json';
+}
+function pgFields(schema) {
+  const props = (schema && schema.properties) || {}, req = new Set((schema && schema.required) || []);
+  const out = Object.entries(props).map(([k, p]) => ({ k, p: p || {}, ty: pgType(p || {}), req: req.has(k) }));
+  return [...out.filter(f => f.req), ...out.filter(f => !f.req)];
+}
+function pgFieldHTML(f) {
+  const { k, p, ty, req } = f, id = 'pg_' + k.replace(/[^\w-]/g, '_');
+  const def = p.default, enumv = p.enum || (p.anyOf || []).flatMap(x => x.const !== undefined ? [x.const] : (x.enum || []));
+  const tyLabel = ty.startsWith('list:') ? ty.slice(5) + '[]' : ty === 'json' ? ([].concat(p.type || 'json').filter(x => x !== 'null').join(' | ') || 'json') : ty;
+  let ctl;
+  if (enumv && enumv.length) ctl = `<select id="${id}" data-k="${esc(k)}" data-ty="enum">${req && def !== undefined ? '' : '<option value="">—</option>'}${enumv.map(v => `<option value="${esc(JSON.stringify(v))}" ${def === v ? 'selected' : ''}>${esc(String(v))}</option>`).join('')}</select>`;
+  else if (ty === 'boolean') ctl = `<select id="${id}" data-k="${esc(k)}" data-ty="boolean"><option value="">—</option><option value="true" ${def === true ? 'selected' : ''}>true</option><option value="false" ${def === false ? 'selected' : ''}>false</option></select>`;
+  else if (ty === 'number' || ty === 'integer') ctl = `<input id="${id}" type="number" ${ty === 'integer' ? 'step="1"' : 'step="any"'} ${p.minimum !== undefined ? `min="${p.minimum}"` : ''} ${p.maximum !== undefined ? `max="${p.maximum}"` : ''} data-k="${esc(k)}" data-ty="${ty}" value="${def !== undefined ? esc(String(def)) : ''}" placeholder="${def !== undefined ? '' : t('left out if empty')}">`;
+  else if (ty.startsWith('list:')) ctl = `<textarea id="${id}" data-k="${esc(k)}" data-ty="${ty}" placeholder="${t('one value per line')}">${esc(Array.isArray(def) ? def.join('\n') : '')}</textarea>`;
+  else if (ty === 'json') ctl = `<textarea id="${id}" class="mono" data-k="${esc(k)}" data-ty="json" placeholder="JSON">${def !== undefined ? esc(JSON.stringify(def, null, 2)) : ''}</textarea>`;
+  else if (PG_LONG.test(k) || (p.maxLength || 0) > 200) ctl = `<textarea id="${id}" data-k="${esc(k)}" data-ty="string">${esc(def !== undefined ? String(def) : '')}</textarea>`;
+  else ctl = `<input id="${id}" data-k="${esc(k)}" data-ty="string" value="${esc(def !== undefined ? String(def) : '')}">`;
+  return `<div class="pg-f"><label class="f" for="${id}"><span class="mono">${esc(k)}</span>${req ? ` <span class="req" title="${t('required')}">*</span>` : ''}<span class="ty">${esc(tyLabel)}</span></label>${ctl}${p.description ? `<div class="help">${esc(truncateStr(p.description, 300))}</div>` : ''}</div>`;
+}
+const truncateStr = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+// readForm returns {args} or {error}; empty optional fields are left out
+function pgRead(box, fields) {
+  const args = {};
+  for (const f of fields) {
+    const el = $(`[data-k="${CSS.escape(f.k)}"]`, box); if (!el) continue;
+    const v = el.value, ty = el.dataset.ty;
+    if (v.trim() === '') { if (f.req) return { error: `${t('{name} is required', { name: f.k })}` }; continue; }
+    try {
+      if (ty === 'enum') args[f.k] = JSON.parse(v);
+      else if (ty === 'boolean') args[f.k] = v === 'true';
+      else if (ty === 'number' || ty === 'integer') { const n = Number(v); if (!isFinite(n) || (ty === 'integer' && !Number.isInteger(n))) return { error: t(ty === 'integer' ? '{name}: must be an integer' : '{name}: must be a number', { name: f.k }) }; args[f.k] = n; }
+      else if (ty.startsWith('list:')) { const items = v.split('\n').map(x => x.trim()).filter(Boolean); args[f.k] = ty === 'list:string' ? items : items.map(Number); }
+      else if (ty === 'json') args[f.k] = JSON.parse(v);
+      else args[f.k] = v;
+    } catch { return { error: `${t('{name}: not valid JSON', { name: f.k })}` }; }
+  }
+  return { args };
+}
+function pgFill(box, fields, args) {
+  for (const f of fields) {
+    const el = $(`[data-k="${CSS.escape(f.k)}"]`, box); if (!el) continue;
+    const v = args[f.k], ty = el.dataset.ty;
+    if (v === undefined) { el.value = ''; continue; }
+    if (ty === 'enum') el.value = JSON.stringify(v);
+    else if (ty === 'boolean') el.value = v ? 'true' : 'false';
+    else if (ty.startsWith('list:') && Array.isArray(v)) el.value = v.join('\n');
+    else if (ty === 'json' || typeof v === 'object') el.value = JSON.stringify(v, null, 2);
+    else el.value = String(v);
+  }
+}
+function pgResultHTML(r) {
+  const parts = (r.result.content || []).map(c => {
+    if (c.type === 'text') { let txt = c.text; try { const j = JSON.parse(txt); if (j && typeof j === 'object') txt = JSON.stringify(j, null, 2); } catch {} return `<pre>${esc(txt)}</pre>`; }
+    if (c.type === 'image' && /^image\/(png|jpeg|gif|webp)$/.test(c.mimeType || '')) return `<img alt="" src="data:${c.mimeType};base64,${esc(c.data)}">`;
+    if (c.type === 'audio' && /^audio\/[\w.+-]+$/.test(c.mimeType || '')) return `<audio controls src="data:${c.mimeType};base64,${esc(c.data)}"></audio>`;
+    return `<pre>${esc(JSON.stringify({ ...c, data: c.data ? `(${t('{n} characters of base64', { n: c.data.length })})` : undefined }, null, 2))}</pre>`;
+  }).join('');
+  const sc = r.result.structuredContent ? `<details class="adv"><summary>${t('Structured output')}</summary><pre>${esc(JSON.stringify(r.result.structuredContent, null, 2))}</pre></details>` : '';
+  return parts + sc;
+}
+function openPlayground(s, tool, box) {
+  const agents = window.__agents || [], fields = pgFields(tool.inputSchema), de = tool.annotations && tool.annotations.destructiveHint;
+  box.innerHTML = `<div class="runner">
+    <div class="pg-head"><div class="seg" role="group" aria-label="${t('Input format')}"><button data-mode="form" class="on">Form</button><button data-mode="json">JSON</button></div>
+      <label class="small" style="display:flex;gap:6px;align-items:center">${t('Run as')} <select data-as style="width:auto;height:30px"><option value="">${t('Admin (unrestricted)')}</option>${agents.map(a => `<option value="${esc(a.id)}">${esc(a.name || a.id)}</option>`).join('')}</select></label></div>
+    <div data-form>${fields.length ? fields.map(pgFieldHTML).join('') : `<p class="help" style="margin:0 0 12px">${t('This tool takes no arguments.')}</p>`}</div>
+    <div data-json hidden><textarea data-args class="mono" style="min-height:140px"></textarea></div>
+    ${de ? `<label class="check" style="margin:2px 0 10px"><input type="checkbox" data-ack><span class="small">${t('This tool can delete or modify data; I understand it runs against my real account.')}</span></label>` : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="pri" data-go>${I.play} ${t('Run')}</button><button data-dry>${t('Check permission only')}</button>
+      <span class="help" style="margin:0">${t('This makes a real call; it shows up in Activity as a <b>panel test</b>.')}</span></div>
+    <details class="adv"><summary>${t('Input schema')}</summary><pre>${esc(JSON.stringify(tool.inputSchema, null, 2))}</pre></details><div data-out class="pg-out"></div></div>`;
+  let mode = 'form';
+  const formEl = $('[data-form]', box), jsonEl = $('[data-json]', box), ta = $('[data-args]', box);
+  const current = () => {
+    if (mode === 'form') return pgRead(box, fields);
+    try { const a = JSON.parse(ta.value || '{}'); return a && typeof a === 'object' && !Array.isArray(a) ? { args: a } : { error: t('Arguments must be a JSON object') }; }
+    catch { return { error: t('Arguments are not valid JSON') }; }
+  };
+  $$('[data-mode]', box).forEach(b => b.onclick = () => {
+    if (b.dataset.mode === mode) return;
+    if (b.dataset.mode === 'json') { const r = pgRead(box, fields); ta.value = JSON.stringify(r.args || {}, null, 2); }
+    else { const r = current(); if (r.error) return toast(r.error); pgFill(box, fields, r.args); }
+    mode = b.dataset.mode; formEl.hidden = mode !== 'form'; jsonEl.hidden = mode !== 'json';
+    $$('[data-mode]', box).forEach(x => x.classList.toggle('on', x === b));
+  });
+  const run = async dry => {
+    const r0 = dry ? { args: {} } : current();
+    if (r0.error) return toast(r0.error);
+    if (!dry && de && !$('[data-ack]', box).checked) return toast(t('First confirm that this tool may modify data'));
+    const out = $('[data-out]', box); out.innerHTML = `<div class="flow"><span class="spin"></span> ${t('Running…')}</div>`;
+    try {
+      const r = await api('POST', '/api/test', { agent: $('[data-as]', box).value, tool: `${s.config.id}.${tool.name}`, arguments: r0.args, dry_run: dry });
+      const pol = r.policy.allowed ? pill('ok', t('Allowed')) : pill('bad', t('Blocked: {reason}', { reason: r.policy.reason }));
+      if (dry) { out.innerHTML = `<div style="margin-top:12px">${pol}</div>`; return; }
+      out.innerHTML = `<div style="margin-top:12px;display:flex;gap:8px;align-items:center">${pol}${r.result.isError ? pill('bad', t('Returned an error')) : pill('ok', t('Succeeded'))}<span class="mute small">${r.duration_ms} ms</span></div>${pgResultHTML(r)}`;
+    } catch (e) { out.innerHTML = `<div class="callout bad" style="margin-top:12px"><div class="grow">${esc(e.message)}</div></div>`; }
+  };
+  $('[data-go]', box).onclick = () => run(false); $('[data-dry]', box).onclick = () => run(true);
+  const first = $('[data-k]', box); if (first) first.focus();
+}
+function bindToolsTab(s) {
+  const tools = window.__tools || [], agents = window.__agents || [];
+  const q = $('#tq'); if (!q) return;
+  q.oninput = () => { const v = q.value.toLowerCase(); $$('.tool').forEach(el => el.hidden = !(el.dataset.name.toLowerCase().includes(v) || $('.desc', el).textContent.toLowerCase().includes(v))); };
+  let timer;
+  const save = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const deny = $$('[data-t]').filter(c => !c.checked).map(c => c.dataset.t);
+      try { await api('POST', '/api/servers', { ...s.config, deny_tools: deny, allow_tools: [] }); s.config.deny_tools = deny; toast(deny.length ? t('{on}/{all} tools on', { on: tools.length - deny.length, all: tools.length }) : t('All tools on')); refreshCounts(); }
+      catch (e) { toast(e.message); }
+    }, 350);
+  };
+  $$('[data-t]').forEach(c => c.onchange = () => { c.closest('.tool').classList.toggle('off', !c.checked); save(); });
+  $('#allOn').onclick = () => { $$('[data-t]').forEach(c => { c.checked = true; c.closest('.tool').classList.remove('off'); }); save(); };
+  $('#roOnly').onclick = () => { $$('[data-t]').forEach(c => { const t = tools.find(x => x.name === c.dataset.t); c.checked = !!(t.annotations && t.annotations.readOnlyHint); c.closest('.tool').classList.toggle('off', !c.checked); }); save(); };
+  $$('[data-run]').forEach(b => b.onclick = () => {
+    const el = b.closest('.tool'), box = $('.rbox', el), t = tools.find(x => x.name === b.dataset.run);
+    if (box.innerHTML) { box.innerHTML = ''; return; }
+    openPlayground(s, t, box);
+  });
+  const want = new URLSearchParams(location.hash.split('?')[1] || '').get('try');
+  const wb = want && $$('[data-run]').find(b => b.dataset.run === want);
+  if (wb) { wb.click(); wb.closest('.tool').scrollIntoView({ block: 'start' }); }
+}
+
+const kvLines = (o, sep) => Object.entries(o || {}).map(([k, v]) => `${k}${sep}${v}`).join('\n');
+const parseLines = (t, sep) => { const o = {}; t.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => { const i = l.indexOf(sep); if (i > 0) o[l.slice(0, i).trim()] = l.slice(i + sep.length).trim(); }); return o; };
+
+function settingsTab(s) {
+  const c = s.config, http = c.transport === 'http';
+  const secrets = s.required_secrets || [];
+  const authLabel = { auto: t('Sign in with account if needed'), oauth: t('Sign in with account (OAuth)'), none: t('No sign-in / via headers') }[c.auth || 'auto'];
+  return `<form id="sf"><div class="panel" style="padding:4px 18px 18px">
+      <div class="grid2"><div><label class="f">${t('Name')}</label><input name="name" value="${esc(c.name)}"></div><div><label class="f">${t('ID')} <span class="hint">${t('agents see it as <span class="mono">{id}.tool</span>', { id: esc(c.id) })}</span></label><input value="${esc(c.id)}" disabled></div></div>
+      <label class="f">${t('Description')} <span class="hint">${t('agents see this; say what it is for')}</span></label><input name="description" value="${esc(c.description || '')}">
+      <label class="f">${t('Purpose')} <span class="hint">${t('which account, environment or project this connection is for')}</span></label><input name="purpose" maxlength="160" value="${esc(c.purpose || '')}" placeholder="${t('e.g. Personal account · Company prod (read-only)')}">
+      <p class="help">${t('Added as <span class="mono">[purpose]</span> to the start of every tool description of this connection. When two connections look alike (say, two Cloudflare accounts), the agent uses it to pick the right one. Only you can change this field; agents cannot.')}</p>
+      ${http ? `<label class="f">${t('URL')}</label><input name="url" value="${esc(c.url)}" class="mono">
+        <label class="f">${t('Sign-in')}</label><select name="auth">${['auto', 'oauth', 'none'].map(v => `<option value="${v}" ${(c.auth || 'auto') === v ? 'selected' : ''}>${{ auto: t('Sign in with account if needed'), oauth: t('Sign in with account (OAuth)'), none: t('No sign-in / via headers') }[v]}</option>`).join('')}</select>
+        <label class="f">${t('Headers <span class="hint">one per line, <span class="mono">Name: value</span>. For a secret use <span class="mono">${secret:NAME}</span></span>')}</label><textarea name="headers" style="min-height:70px">${esc(kvLines(c.headers, ': '))}</textarea>`
+      : c.transport === 'builtin' ? `<p class="small mute" style="margin:14px 0 0">${t('This connection runs inside the gateway; there is no separate program or URL.')} ${c.command === 'gemini' ? t('Manage its API keys under <a href="#vault">Vault &gt; Gemini key pool</a>.') : ''}</p>`
+      : `<label class="f">${t('Command')}</label><input name="command" value="${esc(c.command)}" class="mono">
+        <label class="f">${t('Arguments')} <span class="hint">${t('one per line')}</span></label><textarea name="args" style="min-height:80px">${esc((c.args || []).join('\n'))}</textarea>
+        <label class="f">${t('Environment variables <span class="hint">one per line, <span class="mono">NAME=value</span>. For a secret use <span class="mono">${secret:NAME}</span></span>')}</label><textarea name="env" style="min-height:70px">${esc(kvLines(c.env, '='))}</textarea>`}
+      <div style="margin-top:16px;display:flex;gap:8px"><button class="pri">${t('Save')}</button></div></div></form>
+    <div class="panel"><div class="panel-h"><h2>${t('Credentials')}</h2></div><dl class="kv">
+      ${http ? `<dt>${t('Sign-in type')}</dt><dd>${esc(authLabel)}</dd>` : ''}
+      ${http && c.auth !== 'none' ? `<dt>${t('Session')}</dt><dd>${s.has_oauth_token ? t('Signed in; the token is in the vault and is refreshed when it expires.') : t('Not signed in yet.')} ${s.has_oauth_token ? `<button class="ghost danger" id="resetAuth" type="button" style="margin-left:6px">${t('Sign out')}</button>` : ''}</dd>` : ''}
+      ${c.oauth_client_id ? `<dt>${t('OAuth app')}</dt><dd class="mono">${esc(c.oauth_client_id)}</dd>` : ''}
+      <dt>${t('Uses from the vault')}</dt><dd>${secrets.length ? secrets.map(n => `<a class="mono" href="#vault?new=${enc(n)}">${esc(n)}</a> ${(s.missing_secrets || []).includes(n) ? pill('warn', t('missing')) : pill('ok', t('set'))}`).join('<br>') : `<span class="mute">${t('None')}</span>`}</dd>
+    </dl></div>
+    ${http ? `<div class="panel" id="oauthp"><div class="panel-h"><h2>${t('OAuth app')}</h2><span class="mute small">${c.oauth_client_id ? t('using your own client') : t('using automatic registration')}</span></div>
+      <div style="padding:4px 18px 18px">
+        <p class="small mute" style="margin-top:12px">${t('Some services, such as Google and GitHub, don\'t support automatic client registration. For those, create an OAuth client once in the service\'s developer console and enter its details here.')}${/googleapis\.com/.test(c.url || '') ? t(' For Google: Google Cloud Console > Google Auth Platform > Clients > "Web application", add the redirect URL below and tick "Use this client for an AI-powered agent"; also enable the relevant API.') : ''}</p>
+        <label class="f">${t('Redirect (callback) URL')}</label><div class="copyline"><pre>${esc(location.origin)}/oauth/callback</pre>${copyBtn(location.origin + '/oauth/callback')}</div>
+        <div class="grid2"><div><label class="f">Client ID</label><input id="ocid" class="mono" value="${esc(c.oauth_client_id || '')}" autocomplete="off"></div>
+        <div><label class="f">Client secret</label><input id="ocsec" type="password" placeholder="${c.oauth_client_secret_ref ? t('saved; type to replace') : ''}" autocomplete="off"></div></div>
+        <div style="margin-top:14px;display:flex;gap:8px"><button class="pri" id="ocsave" type="button">${t('Save and sign in')}</button></div><div id="ocflow"></div>
+      </div></div>` : ''}
+    <details class="adv"><summary>${t('Advanced: edit the configuration as JSON')}</summary>
+      <textarea id="rawcfg" style="min-height:260px;margin-top:10px">${esc(JSON.stringify((({ created_at, updated_at, ...x }) => x)(c), null, 2))}</textarea>
+      <div style="margin-top:10px"><button id="saveRaw" type="button">${t('Save JSON')}</button></div></details>
+    ${s.status.stderr ? `<details class="adv"><summary>${t('Server output (stderr)')}</summary><pre>${esc(s.status.stderr)}</pre></details>` : ''}
+    <div class="panel" style="margin-top:24px;border-color:var(--bad-soft)"><div class="r" style="display:flex;gap:14px;align-items:center;padding:14px 18px"><div class="grow"><b>${t('Remove connection')}</b><div class="mute small">${t('Its settings are deleted. Credentials in the vault are kept.')}</div></div><button class="danger" id="del" type="button">${t('Remove')}</button></div></div>`;
+}
+function bindSettingsTab(s) {
+  const c = s.config, f = $('#sf');
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const n = { ...c, name: f.elements.name.value.trim(), description: f.elements.description.value.trim(), purpose: f.elements.purpose.value.trim() };
+    if (c.transport === 'http') { n.url = f.elements.url.value.trim(); n.auth = f.elements.auth.value; n.headers = parseLines(f.elements.headers.value, ':'); }
+    else if (c.transport !== 'builtin') { n.command = f.elements.command.value.trim(); n.args = f.elements.args.value.split('\n').map(x => x.trim()).filter(Boolean); n.env = parseLines(f.elements.env.value, '='); }
+    try { await api('POST', '/api/servers', n); toast(t('Saved')); route(); } catch (err) { toast(err.message); }
+  };
+  const ocs = $('#ocsave');
+  if (ocs) ocs.onclick = async () => {
+    const id = $('#ocid').value.trim(), sec = $('#ocsec').value;
+    if (!id) return toast(t('Client ID is required'));
+    if (!sec && !c.oauth_client_secret_ref) return toast(t('Client secret is required'));
+    const popup = openBlankPopup();
+    try { await api('POST', `/api/servers/${enc(c.id)}/oauth-client`, { client_id: id, client_secret: sec }); }
+    catch (e) { if (popup) popup.close(); return toast(e.message); }
+    const r = await connectFlow($('#ocflow'), c.id, c.name, popup, () => true, 'login');
+    if (!r.error && !r.cancelled) setTimeout(route, 1200);
+  };
+  $('#saveRaw').onclick = async () => { try { await api('POST', '/api/servers', JSON.parse($('#rawcfg').value)); toast(t('Saved')); route(); } catch (e) { toast(e.message); } };
+  const ra = $('#resetAuth'); if (ra) ra.onclick = async () => { if (confirm(t('Sign out of this connection? You will be asked to sign in again the next time it is used.'))) { await api('POST', `/api/servers/${enc(c.id)}/reset-auth`); toast(t('Signed out')); route(); } };
+  $('#del').onclick = async () => { if (confirm(`${t('Remove {name}?', { name: c.name })}`)) { await api('DELETE', `/api/servers/${enc(c.id)}`); toast(t('Removed')); location.hash = 'connections'; } };
+}
+
+// ---------------------------------------------------------------- Approval
+const FIELD_LABEL = lazy(() => ({ transport: t('Transport'), command: t('Command'), args: t('Arguments'), env: t('Environment variables'), url: t('URL'), headers: t('Headers'), auth: t('Sign-in'), oauth_client_id: t('OAuth app'), oauth_client_secret_ref: t('OAuth secret'), oauth_scopes: t('OAuth scopes') }));
+function secretRefs(rows) { const out = new Set(); rows.forEach(r => (r.after.match(/\$\{secret:([A-Za-z0-9_.:-]+)\}/g) || []).forEach(m => out.add(m.slice(9, -1)))); return [...out]; }
+function hostOfUrl(u) { try { return new URL(u).host; } catch { return ''; } }
+// token-level LCS diff (falls back to remove-all/add-all when too large)
+function seqDiff(A, B) {
+  const n = A.length, m = B.length;
+  if (n * m > 400000) return [...A.map(s => ['-', s]), ...B.map(s => ['+', s])];
+  const L = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0;
+  while (i < n && j < m) { if (A[i] === B[j]) { out.push([' ', A[i]]); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) out.push(['-', A[i++]]); else out.push(['+', B[j++]]); }
+  while (i < n) out.push(['-', A[i++]]); while (j < m) out.push(['+', B[j++]]);
+  return out;
+}
+function sortedJSON(v) {
+  const norm = x => Array.isArray(x) ? x.map(norm) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, norm(x[k])])) : x;
+  return JSON.stringify(norm(v), null, 2);
+}
+function inlineDiffHTML(a, b) {
+  return seqDiff((a || '').split(/(\s+)/), (b || '').split(/(\s+)/)).map(([t, x]) => t === ' ' ? esc(x)
+    : t === '-' ? `<del style="background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)">${esc(x)}</del>`
+    : `<ins style="background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok);text-decoration:none">${esc(x)}</ins>`).join('');
+}
+function blockDiffHTML(a, b) {
+  const d = seqDiff(a.split('\n'), b.split('\n')), keep = new Set();
+  d.forEach(([t], i) => { if (t !== ' ') for (let k = i - 2; k <= i + 2; k++) keep.add(k); });
+  let out = '', skipped = 0;
+  d.forEach(([t, x], i) => {
+    if (!keep.has(i)) { skipped++; return; }
+    if (skipped) { out += `<div class="mute">  … ${pl(skipped, '{n} line unchanged', '{n} lines unchanged')}</div>`; skipped = 0; }
+    const col = t === '-' ? 'var(--bad)' : t === '+' ? 'var(--ok)' : 'var(--mute, inherit)';
+    out += `<div style="color:${col}">${t} ${esc(x)}</div>`;
+  });
+  if (skipped) out += `<div class="mute">  … ${pl(skipped, '{n} line unchanged', '{n} lines unchanged')}</div>`;
+  return out || `<div class="mute">${t('schema unchanged')}</div>`;
+}
+function toolChangeHTML(tc) {
+  const isNew = tc.kind === 'new', box = 'mono small" style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px';
+  const descSame = !isNew && tc.before_description === tc.description;
+  const schA = isNew ? '' : sortedJSON(tc.before_schema), schB = sortedJSON(tc.inputSchema);
+  return `<div style="padding:12px 16px;border-top:1px solid var(--line2)">
+    <div style="display:flex;gap:8px;align-items:center"><b class="mono">${esc(tc.name)}</b>${isNew ? `<span class="pill warn">${t('new tool')}</span>` : `<span class="pill warn">${t('changed')}</span>`}${!isNew && tc.pinned_at ? `<span class="mute small">${t('approved version: {when}', { when: esc(relTime(tc.pinned_at)) })}</span>` : ''}</div>
+    <div class="small" style="font-weight:600;margin-top:10px">${t('Description')}${descSame ? ` <span class="mute" style="font-weight:400">${t('(unchanged)')}</span>` : ''}</div>
+    <div class="${box}">${isNew ? esc(tc.description || t('(empty)')) : descSame ? esc(tc.description || t('(empty)')) : inlineDiffHTML(tc.before_description, tc.description)}</div>
+    <div class="small" style="font-weight:600;margin-top:10px">${t('Input schema')}${!isNew && schA === schB ? ` <span class="mute" style="font-weight:400">${t('(unchanged)')}</span>` : ''}</div>
+    ${isNew ? `<details style="margin-top:6px"><summary class="small">${t('Show schema')}</summary><div class="${box}">${esc(schB)}</div></details>`
+      : schA === schB ? '' : `<div class="${box}">${blockDiffHTML(schA, schB)}</div>`}</div>`;
+}
+function approvalSheet(s) {
+  const c = s.config, cfgPending = !!s.pending_approval, rows = cfgPending ? (s.approval_diff || []) : [], isNew = !s.approval;
+  const tools = s.tool_changes || [];
+  const secrets = secretRefs(rows), urlRow = rows.find(r => r.field === 'url'), host = hostOfUrl(c.url || '');
+  const stdio = cfgPending && c.transport === 'stdio';
+  const sub = cfgPending ? (isNew ? t('An agent added a new connection') : t('An agent changed the settings')) : t('The service changed its tools');
+  const injWarn = tools.some(t => t.kind === 'changed' && t.before_description !== t.description);
+  openSheet(`<div class="sheet-h">${iconHTML(c.name, s.icon, 40)}<div class="grow"><h2 style="font-size:17px">${esc(c.name)}</h2><div class="mute small">${sub}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <div class="sheet-b">
+      ${cfgPending ? `<p style="margin-top:16px">${t('If you approve, this connection runs with the settings below. Reject it if you see an address or command you don\'t recognize.')}</p>
+      ${stdio ? `<div class="callout bad" style="margin-top:14px"><div class="grow small"><b>${t('Runs a command on this Mac:')}</b> <span class="mono">${esc([c.command, ...(c.args || [])].join(' '))}</span></div></div>` : ''}
+      ${secrets.length ? `<div class="callout ${stdio || urlRow ? 'bad' : ''}" style="margin-top:14px"><div class="grow small"><b>${t('Credentials it will use from the vault:')}</b> ${secrets.map(n => `<span class="mono">${esc(n)}</span>`).join(', ')}${host ? ` — ${t('sent to <b>{host}</b>.', { host: esc(host) })}` : ''}</div></div>` : ''}
+      ${rows.length ? `<div class="panel" style="margin-top:16px">${rows.map(r => `<div style="padding:12px 16px;border-top:1px solid var(--line2)"><div class="small" style="font-weight:600;margin-bottom:6px">${esc(FIELD_LABEL[r.field] || r.field)}</div>
+        ${!isNew && r.before ? `<div class="mono small" style="color:var(--bad);white-space:pre-wrap;overflow-wrap:anywhere">− ${esc(r.before)}</div>` : ''}
+        <div class="mono small" style="color:${isNew ? 'var(--ink)' : 'var(--ok)'};white-space:pre-wrap;overflow-wrap:anywhere">${isNew ? '' : '+ '}${esc(r.after || t('(empty)'))}</div></div>`).join('').replace('border-top:1px solid var(--line2)', 'border-top:0')}</div>` : ''}` : ''}
+      ${tools.length ? `<h3 style="margin-top:20px;font-size:15px">${t('Tool changes')} <span class="mute small" style="font-weight:400">${tools.length}</span></h3>
+      <p class="help" style="margin-top:4px">${t('These tools\' name, description or input schema differ from the version you last approved (or the tool is new). Agents read descriptions as instructions; until you approve, these tools are hidden from agents and can\'t be called.')}</p>
+      ${injWarn ? `<div class="callout warn" style="margin-top:10px"><div class="grow small">${t('Check whether the description gives the agent new instructions: reject it if it asks the agent to send data elsewhere, read files or ignore its rules.')}</div></div>` : ''}
+      <div class="panel" style="margin-top:12px">${tools.map(toolChangeHTML).join('').replace('border-top:1px solid var(--line2)', 'border-top:0')}</div>` : ''}
+      <p class="help" style="margin-top:12px">${cfgPending ? (isNew ? t('If you reject, the connection is deleted.') : t('If you reject, the last approved settings are restored.')) + (urlRow && !isNew ? t(' Because the URL changed, approving deletes the saved session and you will be asked to sign in again.') : '')
+        : t('If you reject, these tools are turned off. You can turn them back on from the Tools tab; they will ask for approval again.')}</p>
+    </div>
+    <div class="sheet-f"><button class="danger" id="rej" style="margin-right:auto">${t('Reject')}</button><button data-close>${t('Later')}</button><button class="pri" id="ok">${t('Approve')}</button></div>`, d => {
+    $('#ok', d).onclick = async () => { try { const r = await api('POST', `/api/servers/${enc(c.id)}/approve`, { fingerprint: s.fingerprint, tools_fingerprint: s.tools_fingerprint || '' }); d.close(); toast(r.tools_pinned ? pl(r.tools_pinned, 'Approved ({n} tool)', 'Approved ({n} tools)') : t('Approved')); refreshCounts(); route(); } catch (e) { toast(e.message); } };
+    $('#rej', d).onclick = async () => { try { const r = await api('POST', `/api/servers/${enc(c.id)}/reject`); d.close(); toast(r.deleted ? t('Rejected; connection deleted') : cfgPending ? t('Rejected; previous settings restored') : t('Rejected; tools turned off')); refreshCounts(); if (r.deleted && readHash().route === 'c') location.hash = 'connections'; else route(); } catch (e) { toast(e.message); } };
+  });
+}
+
+// ---------------------------------------------------------------- Discover
+const AUTH_TXT = lazy(() => ({ oauth: ['', t('Account sign-in')], oauth_app: ['warn', t('One-time setup')], token: ['', t('With a key')], credentials: ['', t('Connection details')], none: ['', t('No sign-in')], auto: ['', t('Sign-in if needed')] }));
+const SOURCES = () => [['featured', t('Featured')], ['all', t('All')], ['claude', t('Claude directory')], ['user', t('My templates')], ['registry', t('Community')]];
+const SRC_LABEL = lazy(() => ({ builtin: 'Gateway', user: t('My template'), claude: t('Claude directory'), registry: t('Community') }));
+const CAT = { q: '', src: 'featured', offset: 0, total: 0, seq: 0 };
+
+views.discover = async ({ params }) => {
+  CAT.q = params.get('q') || '';
+  CAT.src = params.get('source') || (CAT.q ? 'all' : 'featured');
+  const st = await api('GET', '/api/catalog?source=featured&limit=1');
+  views.discover.after = h => {
+    let t;
+    $('#catq').oninput = e => { clearTimeout(t); t = setTimeout(() => { CAT.q = e.target.value; if (CAT.q && CAT.src === 'featured') setSrc('all'); else loadCat(); }, 220); };
+    $$('#srcseg button').forEach(b => b.onclick = () => setSrc(b.dataset.src));
+    $('#addTpl').onclick = templateSheet;
+    loadCat();
+    if (h.params.get('install')) openInstall(h.params.get('install'));
+  };
+  return `<div class="head"><div><h1>${t('Discover')}</h1><p class="lede">${t('Pick a service. Sign in or enter a key if needed, and your agents can start using it right away. The Claude directory has {n} services.', { n: st.claude_count })}</p></div>
+      <div class="actions"><button id="addTpl">${I.plus} ${t('Your own template')}</button></div></div>
+    <div class="toolbar"><input type="search" id="catq" placeholder="GitHub, Notion, Postgres, Stripe…" value="${esc(CAT.q)}" autocomplete="off" aria-label="${t('Search services')}">
+      <div class="seg" id="srcseg">${SOURCES().map(([v, l]) => `<button data-src="${v}" class="${v === CAT.src ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+    <div id="catres"></div>`;
+};
+function setSrc(src) { CAT.src = src; $$('#srcseg button').forEach(b => b.classList.toggle('on', b.dataset.src === src)); loadCat(); }
+function tileHTML(e) {
+  const kinds = [...new Set((e.auth || []).map(a => a.kind))];
+  return `<button class="tile" data-entry="${esc(e.id)}">${iconHTML(e.name, e.icon, 40)}<span class="t"><b>${esc(e.name)}</b>
+    <span class="d">${esc(e.description || '')}</span>
+    <span class="m">${(e.installed || []).length ? pill('ok', t('Added')) : ''}${kinds.map(k => { const [tone, l] = AUTH_TXT[k] || ['', k]; return `<span class="pill ${tone}">${l}</span>`; }).join('')}
+      ${(e.tools || []).length ? `<span>${pl(e.tools.length, '{n} tool', '{n} tools')}</span>` : ''}${(e.missing_commands || []).length ? pill('bad', `${t('{cmds} required', { cmds: e.missing_commands.join(', ') })}`) : ''}${e.source === 'registry' ? `<span>${t('Community')}</span>` : e.source === 'user' ? `<span>${t('My template')}</span>` : ''}</span></span></button>`;
+}
+async function loadCat(append = false) {
+  const seq = ++CAT.seq; if (!append) CAT.offset = 0;
+  const box = $('#catres'); if (!box) return;
+  const q = CAT.q.trim();
+  history.replaceState(null, '', `#discover?${new URLSearchParams({ ...(q ? { q } : {}), source: CAT.src })}`);
+  if (CAT.src === 'registry' && !q) { box.innerHTML = `<div class="panel"><div class="empty"><h2>${t('Community registry')}</h2><p>${t('The official MCP Registry has thousands of entries, most of them experimental. Type above to search it.')}</p></div></div>`; return; }
+  if (!append) box.innerHTML = `<div class="flow"><span class="spin"></span> ${t('Loading…')}</div>`;
+  let d;
+  try { d = await api('GET', `/api/catalog?q=${enc(q)}&source=${CAT.src}&offset=${CAT.offset}&limit=48`); }
+  catch (e) { box.innerHTML = `<div class="callout bad"><div class="grow">${esc(e.message)}</div></div>`; return; }
+  if (seq !== CAT.seq) return;
+  CAT.total = d.total;
+  const tiles = d.entries.map(tileHTML).join('');
+  if (append) $('#tiles').insertAdjacentHTML('beforeend', tiles);
+  else box.innerHTML = `${(d.errors || []).map(e => `<div class="callout"><div class="grow">${esc(e)}</div></div>`).join('')}
+    ${d.total ? `<div class="tiles" id="tiles">${tiles}</div><div id="more"></div>` : `<div class="panel"><div class="empty"><h2>${t('Nothing found for “{q}”', { q: esc(q) })}</h2><p>${CAT.src !== 'registry' ? t('You can also search the community registry or add your own template.') : t('You can add your own template.')}</p>
+      <p style="margin-top:14px;display:flex;gap:8px;justify-content:center">${CAT.src !== 'registry' ? `<button id="tryReg">${t('Search the community')}</button>` : ''}<button id="tryTpl">${I.plus} ${t('Your own template')}</button></p></div></div>`}`;
+  CAT.offset += d.entries.length;
+  const more = $('#more'); if (more) more.innerHTML = CAT.offset < CAT.total ? `<div style="text-align:center;margin-top:16px"><button id="moreB">${t('Show {n} more', { n: CAT.total - CAT.offset })}</button></div>` : '';
+  const mb = $('#moreB'); if (mb) mb.onclick = () => loadCat(true);
+  const tr = $('#tryReg'); if (tr) tr.onclick = () => setSrc('registry');
+  const tt = $('#tryTpl'); if (tt) tt.onclick = templateSheet;
+  $$('.tile', box).forEach(t => t.onclick = () => openInstall(t.dataset.entry));
+}
+function templateSheet() {
+  const sample = { name: t('Company database'), description: t('Main PostgreSQL (read-only)'), template: { id: 'company-db', transport: 'stdio', command: 'uvx', args: ['postgres-mcp', '--access-mode=restricted'], env: { DATABASE_URI: '{{uri}}' } }, params: [{ name: 'uri', label: t('Connection URI'), secret: true, required: true, description: t('postgresql://user:password@host:5432/db') }] };
+  openSheet(`<div class="sheet-h"><div class="grow"><h2>${t('Your own template')}</h2><div class="mute small">${t('Add a service you install often to the catalog')}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <div class="sheet-b"><p class="small" style="margin-top:14px">${t('Use <span class="mono">{{param}}</span> in the template. Fields marked <span class="mono">secret: true</span> are stored encrypted in the vault. You can install several connections from one template under different IDs (e.g. one per database).')}</p>
+    <textarea id="ent" style="min-height:360px;margin-top:12px">${esc(JSON.stringify(sample, null, 2))}</textarea></div>
+    <div class="sheet-f"><button data-close>${t('Cancel')}</button><button class="pri" id="save">${t('Add template')}</button></div>`, d => {
+    $('#save', d).onclick = async () => { try { await api('POST', '/api/catalog', JSON.parse($('#ent', d).value)); d.close(); toast(t('Template added')); if (readHash().route === 'discover') setSrc('user'); else location.hash = 'discover?source=user'; } catch (e) { toast(e.message); } };
+  });
+}
+const fillBase = (s, base) => String(s || '').replaceAll('{{base_url}}', base);
+
+async function openInstall(id) {
+  let e, st;
+  try { [e, st] = await Promise.all([api('GET', '/api/catalog/entry?id=' + enc(id)), api('GET', '/api/status')]); } catch (err) { return toast(err.message); }
+  const base = st.base_url, opts = e.auth && e.auth.length ? e.auth : [{ id: 'default', kind: 'none', label: t('No sign-in needed') }];
+  const inst = e.installed || [];
+  let sel = 0;
+  const field = p => {
+    const lab = `<label class="f">${esc(p.label || p.name)}${p.required ? '' : ` <span class="hint">${t('optional')}</span>`}</label>`;
+    const help = (p.description || p.help_url || p.secret) ? `<div class="help">${esc(p.description || '')}${p.secret ? t(' Stored encrypted in the vault; agents cannot see it.') : ''} ${p.help_url ? `<a target="_blank" rel="noopener" href="${esc(p.help_url)}">${t('Where do I find this?')}</a>` : ''}</div>` : '';
+    if (p.options && p.options.length) return lab + `<select data-p="${esc(p.name)}">${p.options.map(o => `<option value="${esc(o.value)}" ${o.value === p.default ? 'selected' : ''}>${esc(o.label)}${o.description ? ' — ' + esc(o.description) : ''}</option>`).join('')}</select>` + help;
+    return lab + `<input data-p="${esc(p.name)}" type="${p.secret ? 'password' : 'text'}" value="${esc(p.default || '')}" autocomplete="off" ${p.required ? 'required' : ''}>` + help;
+  };
+  const optBody = o => {
+    const say = {
+      oauth: `${t('When you click Add, the {name} sign-in screen opens in a new tab. Once you approve, the connection is set up automatically; the session is kept in the vault and refreshed when it expires.', { name: esc(e.name) })}`,
+      auto: `${t('If the service asks you to sign in, a sign-in screen opens in a new tab.')}`,
+      none: `${t('No sign-in needed; just click Add.')}`,
+    }[o.kind];
+    const steps = (o.setup_steps || []).length ? `<ol class="steps">${o.setup_steps.map(x => `<li>${esc(fillBase(x, base))}</li>`).join('')}</ol>` : '';
+    const setup = o.setup_url ? `<div style="margin-top:12px"><a class="btn" target="_blank" rel="noopener" href="${esc(fillBase(o.setup_url, base))}">${I.ext} ${esc(o.setup_label || (o.kind === 'oauth_app' ? t('Open setup page') : t('Create token')))}</a></div>` : '';
+    const cb = o.kind === 'oauth_app' ? `<label class="f">${t('Callback URL')} <span class="hint">${t('paste this into the app settings')}</span></label><div class="copyline"><pre>${esc(base)}/oauth/callback</pre>${copyBtn(base + '/oauth/callback')}</div>` : '';
+    return `${o.description && opts.length < 2 ? `<p class="small" style="margin-top:14px">${esc(o.description)}</p>` : ''}${say ? `<p class="small mute" style="margin-top:10px">${say}</p>` : ''}${steps}${setup}${cb}${[...(e.params || []), ...(o.params || [])].map(field).join('')}`;
+  };
+  const draw = d => {
+    $('#authsel', d).innerHTML = opts.length > 1 ? `<label class="f">${t('How should it connect?')}</label>${opts.map((x, i) => `<label class="opt ${i === sel ? 'on' : ''}"><input type="radio" name="ao" value="${i}" ${i === sel ? 'checked' : ''}><span><b>${esc(x.label)}</b>${x.description ? `<div class="mute small">${esc(x.description)}</div>` : ''}</span></label>`).join('')}` : '';
+    $('#authbody', d).innerHTML = optBody(opts[sel]);
+    $$('input[name=ao]', d).forEach(r => r.onchange = () => { sel = +r.value; draw(d); });
+    bindCopy(d);
+  };
+  const suggested = inst.length ? `${e.template.id}-${inst.length + 1}` : e.template.id;
+  openSheet(`<div class="sheet-h">${iconHTML(e.name, e.icon, 44)}<div class="grow" style="min-width:0"><h2 style="font-size:17px">${esc(e.name)}</h2>
+      <div class="mute small">${esc(SRC_LABEL[e.source] || e.source)}${(e.tools || []).length ? `, ${pl(e.tools.length, '{n} tool', '{n} tools')}` : ''}${e.homepage ? ` · <a target="_blank" rel="noopener" href="${esc(e.homepage)}">${t('documentation')}</a>` : ''}</div></div>
+      <button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="inf" class="sheet-b" autocomplete="off">
+      <p style="margin-top:16px">${esc(e.description || '')}</p>
+      ${e.long && e.long !== e.description ? `<details class="adv" style="margin-top:8px"><summary>${t('More info')}</summary><p class="small mute" style="margin-top:6px">${esc(e.long)}</p></details>` : ''}
+      ${e.added_by ? `<div class="callout bad" style="margin-top:14px"><div class="grow small">${t('The agent <b>{agent}</b> added this template. Before adding it, check the command and URL in the "Advanced" section below.', { agent: esc(e.added_by) })}</div></div>` : ''}
+      ${inst.length ? `<div class="callout ok" style="margin-top:14px"><div class="grow small">${t('Already added: <b>{ids}</b>. You can add a second connection for another account or database.', { ids: inst.map(esc).join(', ') })}</div></div>` : ''}
+      ${(e.missing_commands || []).length ? `<div class="callout bad" style="margin-top:14px"><div class="grow small">${t('This service needs <span class="mono">{cmds}</span>, but it was not found on this Mac.', { cmds: esc(e.missing_commands.join(', ')) })}${e.missing_commands.includes('uvx') ? t(' To install it, run this in a terminal: <span class="mono">curl -LsSf https://astral.sh/uv/install.sh | sh</span>') : ''}</div></div>` : ''}
+      ${(e.tools || []).length ? `<details class="adv" style="margin-top:8px"><summary>${t('Tools ({n})', { n: e.tools.length })}</summary><p class="mono" style="margin-top:6px;color:var(--mute);line-height:1.8">${e.tools.map(esc).join(', ')}</p></details>` : ''}
+      <div id="authsel"></div><div id="authbody"></div>
+      <details class="adv" ${inst.length ? 'open' : ''}><summary>${t('Advanced')}</summary>
+        <label class="f">${t('ID <span class="hint">agents see the tools as <span class="mono">id.tool</span></span>')}</label><input id="iid" class="mono" value="${esc(suggested)}">
+        <pre>${esc(JSON.stringify(e.template, null, 2))}</pre></details>
+      <div id="flow"></div>
+    </form>
+    <div class="sheet-f" id="instf"><button data-close>${t('Cancel')}</button><button class="pri" id="go" form="inf">${inst.length ? t('Add another connection') : t('Add and connect')}</button></div>`, d => {
+    draw(d);
+    $('#inf', d).onsubmit = async ev => {
+      ev.preventDefault();
+      const o = opts[sel], params = {};
+      $$('[data-p]', d).forEach(i => { if (i.value) params[i.dataset.p] = i.value; });
+      const tmpl = { ...e.template, ...(o.template || {}) };
+      const popup = ['oauth', 'oauth_app', 'auto'].includes(o.kind) && needsLoginPopup(tmpl) ? openBlankPopup() : null;
+      const go = $('#go', d); go.disabled = true; go.textContent = t('Adding…');
+      let r;
+      try { r = await api('POST', '/api/catalog/install', { catalog_id: e.id, id: $('#iid', d).value.trim(), auth: o.id, params }); }
+      catch (err) { if (popup) popup.close(); toast(err.message); go.disabled = false; go.textContent = t('Add and connect'); return; }
+      if ((r.missing_secrets || []).length) { if (popup) popup.close(); d.close(); toast(t('Enter the missing credentials')); location.hash = 'vault?new=' + enc(r.missing_secrets[0]); return; }
+      $('#authsel', d).innerHTML = ''; $('#authbody', d).innerHTML = ''; $$('details', d).forEach(x => x.remove());
+      $('#instf', d).innerHTML = `<a class="btn" href="#c/${enc(r.server.id)}" data-close>${t('Open connection')}</a><button class="pri" data-close>${t('Done')}</button>`;
+      $$('[data-close]', d).forEach(b => b.onclick = () => d.close());
+      const res = await connectFlow($('#flow', d), r.server.id, e.name, popup, () => d.open, ['oauth', 'oauth_app'].includes(o.kind) ? 'login' : 'connect');
+      refreshCounts();
+      if (readHash().route === 'discover') loadCat();
+      return res;
+    };
+  });
+}
+
+// ---------------------------------------------------------------- Agents
+views.agents = async ({ params }) => {
+  const [agents, st, servers, apps, pr, tm] = await Promise.all([api('GET', '/api/agents'), api('GET', '/api/status'), api('GET', '/api/servers'), api('GET', '/api/apps'), api('GET', '/api/pools'), api('GET', '/api/settings/tools')]);
+  const pools = pr.pools || [];
+  window.__ctx = { agents, st, servers, apps, pools, tm };
+  views.agents.after = () => {
+    $('#newA').onclick = () => agentSheet(null);
+    $$('[data-agent]').forEach(r => r.onclick = ev => { ev.preventDefault(); agentSheet(agents.find(a => a.id === r.dataset.agent)); });
+    $('#newApp').onclick = () => appSheet(null);
+    $('#defMode').onchange = async e => { try { await api('POST', '/api/settings/tools', { default_mode: e.target.value }); toast(t('Default tool mode: {mode}', { mode: TOOLMODE[e.target.value][0] })); route(); } catch (err) { toast(err.message); } };
+    $$('[data-app]').forEach(r => r.onclick = ev => { ev.preventDefault(); appSheet(apps.find(a => a.id === r.dataset.app)); });
+    if (params && params.get('app') === 'new') { history.replaceState(null, '', '#agents'); appSheet(null, params.get('pool')); }
+  };
+  const poolName = id => (pools.find(p => p.config.id === id) || { config: { name: id } }).config.name;
+  const appsHTML = `<div class="head" style="margin-top:36px"><div><h2 style="font-size:19px">${t('Apps')}</h2><p class="lede">${t('Programs you write reach the provider\'s API through the gateway. You give the program an app key instead of a real API key; the real keys stay in the vault, and when one hits its quota the gateway moves on to the next.')}</p></div>
+      <div class="actions"><button id="newApp">${I.plus} ${t('Add app')}</button></div></div>
+    <div class="panel"><div class="rows">${apps.map(a => `<a class="r" href="#" data-app="${esc(a.id)}">${iconHTML(a.name || a.id, '', 34)}
+      <div class="main"><b>${esc(a.name || a.id)}</b><div class="sub">${(a.pools || []).length ? (a.pools || []).map(id => esc(poolName(id))).join(', ') : t('No access to any pool')}</div></div>
+      ${expiryPill(a.expires_at)}<div class="meta" style="width:130px">${a.last_used ? relTime(a.last_used) : t('never used')}</div>${I.chev}</a>`).join('') || `<div class="empty"><p>${t('No apps yet. If a program uses the OpenAI, Gemini, Anthropic or ElevenLabs API, add it here; changing its URL and key is all it takes.')}</p></div>`}</div></div>`;
+  const access = a => !(a.allow || []).length && !(a.deny || []).length ? t('Can use all connections') : `${(a.allow || []).length ? pl((a.allow || []).length, 'Limited by {n} rule', 'Limited by {n} rules') : t('Can use all')}${(a.deny || []).length ? `, ${pl((a.deny || []).length, '{n} deny rule', '{n} deny rules')}` : ''}`;
+  return `<div class="head"><div><h1>${t('Agents')}</h1><p class="lede">${t('Every agent that connects to the gateway has its own key and access settings. It can be Claude Code, Codex, Gemini CLI or an agent you wrote yourself.')}</p></div>
+      <div class="actions"><button class="pri" id="newA">${I.plus} ${t('Add agent')}</button></div></div>
+    <div class="toolbar" style="margin-top:-6px"><label class="small" style="display:flex;gap:8px;align-items:center">${t('Default tool mode')}
+      <select id="defMode" style="width:auto;height:32px">${Object.entries(TOOLMODE).map(([k, [l]]) => `<option value="${k}" ${tm.default_mode === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <span class="help" style="margin:0">${esc(TOOLMODE[tm.default_mode][1])}${t(' Can be changed per agent.')}</span></div>
+    <div class="panel"><div class="rows">${agents.map(a => `<a class="r" href="#" data-agent="${esc(a.id)}">${iconHTML(a.name || a.id, '', 34)}
+      <div class="main"><b>${esc(a.name || a.id)}</b><div class="sub">${esc(access(a))}</div></div>
+      ${expiryPill(a.expires_at)}${a.tool_mode ? `<span class="pill">${esc(TOOLMODE[a.tool_mode][0])}</span>` : ''}${a.can_manage ? `<span class="pill acc">${t('Can manage')}</span>` : ''}
+      <div class="meta" style="width:130px">${a.last_seen && Date.now() - new Date(a.last_seen) < 15 * 60e3 ? `${pill('ok', t('active'))}` : a.last_seen ? relTime(a.last_seen) : t('never connected')}</div>${I.chev}</a>`).join('') || `<div class="empty"><h2>${t('No agents yet')}</h2><p>${t('Add your first agent and get its connect command.')}</p></div>`}</div></div>
+    ${appsHTML}`;
+};
+// ---- proxy apps ----
+function proxySnippets(pool, base, tok) {
+  const url = `${base}/proxy/${pool.config.id}`, prov = pool.config.provider, k = tok || t('<app key>');
+  const blk = (label, text) => `<label class="f">${label}</label><div class="copyline"><pre>${esc(text)}</pre>${tok ? copyBtn(text) : ''}</div>`;
+  const by = {
+    openai: () => blk(t('Environment variables (the OpenAI SDKs read these)'), `OPENAI_BASE_URL=${url}/v1\nOPENAI_API_KEY=${k}`)
+      + blk('Python', `from openai import OpenAI\nclient = OpenAI(base_url="${url}/v1", api_key="${k}")`),
+    anthropic: () => blk(t('Environment variables (the Anthropic SDKs read these)'), `ANTHROPIC_BASE_URL=${url}\nANTHROPIC_API_KEY=${k}`)
+      + blk('Python', `import anthropic\nclient = anthropic.Anthropic(base_url="${url}", api_key="${k}")`),
+    gemini: () => blk('Python (google-genai)', `from google import genai\nclient = genai.Client(api_key="${k}", http_options={"base_url": "${url}"})`)
+      + blk('curl', `curl "${url}/v1beta/models/gemini-2.5-flash:generateContent" \\\n  -H "x-goog-api-key: ${k}" -H "Content-Type: application/json" \\\n  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'`),
+    elevenlabs: () => blk('Python', `from elevenlabs.client import ElevenLabs\nclient = ElevenLabs(api_key="${k}", base_url="${url}")`)
+      + blk('curl', `curl "${url}/v1/voices" -H "xi-api-key: ${k}"`),
+  };
+  return `<div style="margin-top:14px"><b>${esc(pool.config.name)}</b> <span class="mono small mute">${esc(url)}</span>
+    ${(by[prov] || (() => blk('curl', `curl "${url}/<path>" -H "Authorization: Bearer ${k}"`)))()}</div>`;
+}
+function appSheet(a, prePool) {
+  const { st, pools } = window.__ctx, isNew = !a;
+  a = a || { id: '', name: '', pools: prePool ? [prePool] : [] };
+  const sel = new Set(a.pools || []);
+  const base = st.base_url || location.origin;
+  openSheet(`<div class="sheet-h">${iconHTML(a.name || a.id || '+', '', 40)}<div class="grow"><h2 style="font-size:17px">${isNew ? t('New app') : esc(a.name || a.id)}</h2><div class="mute small">${isNew ? t('The app key is shown once after you save') : t('Last used: {when}', { when: a.last_used ? relTime(a.last_used) : t('never') })}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="apf" class="sheet-b" autocomplete="off">
+      <div class="grid2"><div><label class="f">${t('Name')}</label><input name="name" value="${esc(a.name)}" placeholder="${t('Podcast maker')}" required></div>
+      <div><label class="f">${t('ID')}</label><input name="id" class="mono" value="${esc(a.id)}" ${isNew ? '' : 'disabled'} placeholder="podcast-app" pattern="[a-z0-9][a-z0-9-]*" required></div></div>
+      <label class="f">${t('Which key pools can it use?')}</label>
+      ${pools.length ? pools.map(p => `<label class="check" style="padding:4px 0"><input type="checkbox" data-pool="${esc(p.config.id)}" ${sel.has(p.config.id) ? 'checked' : ''}><span><b>${esc(p.config.name)}</b> <span class="mute small">${pl((p.keys || []).length, '{n} key', '{n} keys')} · <span class="mono">/proxy/${esc(p.config.id)}</span></span></span></label>`).join('') : `<p class="help">${t('No key pools yet; add one on the Vault page first.')}</p>`}
+      <label class="f">${t('Key lifetime')} <span class="hint">${t('if you change it, it counts from today')}</span></label>${ttlSelect(a.token_ttl_days)}
+      ${isNew ? '' : `<p class="help">${expiryText(a.expires_at)}</p>`}
+      <p class="help">${t('The app key only works with the pools you pick; it gives no access to MCP or this panel. The gateway strips any credentials the app sends and adds a key from the pool. Request and response bodies are not logged; Activity shows only the path, the status and the name of the key used.')}</p>
+      ${isNew ? '' : `<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>${t('Usage')}</h3></div><div style="padding:4px 18px 16px">${(a.pools || []).map(id => pools.find(p => p.config.id === id)).filter(Boolean).map(p => proxySnippets(p, base, '')).join('') || `<p class="help">${t('Pick a pool.')}</p>`}
+        <p class="small mute" style="margin-top:14px">${t('For security, the key is only shown when it is created. If you lost it, create a new one; the old one stops working immediately.')}</p><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="pairApp">${t('Pairing code')}</button><button type="button" id="rotApp">${I.refresh} ${t('Show a new key')}</button></div></div></div>`}
+    </form>
+    <div class="sheet-f">${isNew ? '' : `<button class="danger" id="delApp" type="button" style="margin-right:auto">${t('Delete')}</button>`}<button data-close>${t('Cancel')}</button><button class="pri" form="apf">${isNew ? t('Add app') : t('Save')}</button></div>`, d => {
+    const f = $('#apf', d);
+    const showTok = (tok, app) => {
+      const ps = (app.pools || []).map(id => pools.find(p => p.config.id === id)).filter(Boolean);
+      $('.sheet-b', d).innerHTML = `<div class="callout ok" style="margin-top:16px"><div class="grow"><b>${t('The app key is ready.')}</b>${t(' It won\'t be shown again after you close this screen. In your program, use it in place of the API key, and the URL below in place of the API URL.')}</div></div>
+        <label class="f">${t('App key')}</label><div class="copyline"><pre>${esc(tok)}</pre>${copyBtn(tok)}</div>
+        ${ps.map(p => proxySnippets(p, base, tok)).join('') || `<p class="help">${t("This app can't use any pool yet.")}</p>`}`;
+      bindCopy(d); $('.sheet-f', d).innerHTML = `<button class="pri" data-close>${t('Done')}</button>`; $$('[data-close]', d).forEach(b => b.onclick = () => d.close()); d.addEventListener('close', () => route(), { once: true });
+    };
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const body = { id: isNew ? f.elements.id.value.trim() : a.id, name: f.elements.name.value.trim(), pools: $$('[data-pool]', d).filter(c => c.checked).map(c => c.dataset.pool), token_ttl_days: +f.elements.ttl.value };
+      try {
+        const r = await api('POST', '/api/apps', body);
+        if (r.token) showTok(r.token, r.app); else { d.close(); toast(t('Saved')); route(); }
+      } catch (e) { toast(e.message); }
+    };
+    const pairBtn = $('#pairApp', d);
+    if (pairBtn) pairBtn.onclick = async () => {
+      if (a.last_used && !confirm(t('When the code is used, a new key is created for this app and the current key stops working. Continue?'))) return;
+      try { const pr = await api('POST', `/api/apps/${enc(a.id)}/pair`); $('.sheet-b', d).innerHTML = pairingHTML('app', pr.code, pr.expires_at, base, a.name || a.id); bindPairing(d); $('.sheet-f', d).innerHTML = `<button class="pri" data-close>${t('Done')}</button>`; $$('[data-close]', d).forEach(b => b.onclick = () => d.close()); d.addEventListener('close', () => route(), { once: true }); } catch (e) { toast(e.message); }
+    };
+    const rot = $('#rotApp', d);
+    if (rot) rot.onclick = async () => { if (!confirm(t('The old key stops working immediately. Continue?'))) return; try { const r = await api('POST', `/api/apps/${enc(a.id)}/rotate`); showTok(r.token, r.app); } catch (e) { toast(e.message); } };
+    const del = $('#delApp', d);
+    if (del) del.onclick = async () => { if (!confirm(`${t('Delete {name}? Its key stops working immediately.', { name: a.name || a.id })}`)) return; try { await api('DELETE', `/api/apps/${enc(a.id)}`); d.close(); toast(t('Deleted')); route(); } catch (e) { toast(e.message); } };
+  });
+}
+const TOOLMODE = lazy(() => ({
+  lazy: ['Lazy', t('The agent sees 5 general tools and finds the real ones by searching. Context stays very small; best when there are many tools.')],
+  direct: ['Direct', t('Every tool the agent may use is listed directly (server__tool). No search step, but all schemas sit in the context.')],
+  auto: [t('Auto'), t('Direct when the agent sees few tools, Lazy when it sees many.')],
+}));
+const kb = n => n < 1024 ? n + ' B' : (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
+const TTL_OPTS = () => [[0, t('No expiry')], [30, t('30 days')], [90, t('90 days')], [180, t('180 days')], [365, t('1 year')]];
+function ttlSelect(cur) {
+  const opts = TTL_OPTS().some(([d]) => d === (cur || 0)) ? TTL_OPTS() : [...TTL_OPTS(), [cur, pl(cur, '{n} day', '{n} days')]];
+  return `<select name="ttl" style="max-width:180px">${opts.map(([d, l]) => `<option value="${d}" ${(cur || 0) === d ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+}
+function expiryPill(exp) {
+  if (!exp) return '';
+  const days = (new Date(exp) - Date.now()) / 864e5;
+  if (days <= 0) return pill('bad', t('key expired'));
+  if (days < 14) return pill('warn', pl(Math.max(1, Math.round(days)), 'key expires in {n} day', 'key expires in {n} days'));
+  return '';
+}
+function expiryText(exp) {
+  if (!exp) return t('The key does not expire.');
+  const d = new Date(exp), past = d < new Date();
+  return t(past ? 'The key <b>expired</b> on {date}.' : 'The key expires on {date}.', { date: d.toLocaleDateString(LOCALE(), { day: 'numeric', month: 'long', year: 'numeric' }) });
+}
+// pairing view: one-time code + setup texts for each client; the token is
+// fetched by the command itself and never shown here
+function pairingHTML(kind, code, exp, base, name) {
+  // T=$(…) && …: if the code is wrong or expired nothing gets written
+  const getTok = `T=$(curl -fsS ${base}/pair -d code=${code} -d format=token) && `;
+  const blk = (label, text, hint) => `<label class="f">${label}${hint ? ` <span class="hint">${hint}</span>` : ''}</label><div class="copyline"><pre>${esc(text)}</pre>${copyBtn(text)}</div>`;
+  let body;
+  if (kind === 'agent') {
+    const cc = `${getTok}claude mcp add --scope user --transport http gateway ${base}/mcp --header "Authorization: Bearer $T"`;
+    const tabs = {
+      claude: blk('Claude Code', cc, t('run in a terminal; available in every project')),
+      codex: blk('Codex', `${getTok}echo "export TOOLGATE_TOKEN=$T" >> ~/.zshrc && \\\n  codex mcp add gateway --url ${base}/mcp --bearer-token-env-var TOOLGATE_TOKEN`, t('the key is written to your shell profile; open a new terminal')),
+      gemini: blk('Gemini CLI', `${getTok}gemini mcp add --scope user --transport http gateway ${base}/mcp --header "Authorization: Bearer $T"`),
+      agent: blk(t('Give it to another agent'), `${t('You need to connect to Toolgate. Run this command once in a terminal; the code in it is single-use and valid for 10 minutes. The command writes the key straight into your settings; do not print the key or put it in the chat:\n\n{cmd}\n\nThen reload your MCP connections (/mcp in Claude Code) and call the gateway\'s overview tool.', { cmd: cc })}`, t('paste it into the chat; the agent runs the command itself')),
+      other: blk(t('Other clients'), `curl -fsS ${base}/pair -d code=${code}`, t('put the token from the output into the client\'s settings; the token is visible in the terminal'))
+        + `<dl class="kv" style="padding:0;margin-top:10px;grid-template-columns:90px 1fr"><dt>${t('URL')}</dt><dd class="mono">${esc(base)}/mcp</dd><dt>Header</dt><dd class="mono">Authorization: Bearer &lt;token&gt;</dd></dl>`,
+    };
+    const names = { claude: 'Claude Code', codex: 'Codex', gemini: 'Gemini CLI', agent: t('Give to agent'), other: t('Other') };
+    body = `<div class="seg" role="tablist" style="margin-top:14px">${Object.keys(tabs).map((k, i) => `<button type="button" data-ptab="${k}" class="${i ? '' : 'on'}">${names[k]}</button>`).join('')}</div>
+      ${Object.entries(tabs).map(([k, h], i) => `<div data-ppane="${k}" ${i ? 'hidden' : ''}>${h}</div>`).join('')}`;
+  } else {
+    body = blk(t('Put the app key in an environment variable'), `${getTok}export TOOLGATE_APP_TOKEN=$T`, t('in the terminal where you will run the program'))
+      + `<p class="help">${t('In the program, use the <span class="mono">TOOLGATE_APP_TOKEN</span> variable as the API key and the app\'s pool URL as the API URL (see the examples in the app details).')}</p>`;
+  }
+  return `<div class="callout" style="margin-top:16px;display:block"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div><div class="small mute">${t('Pairing code')}</div><div class="mono" style="font-size:28px;font-weight:700;letter-spacing:2px">${esc(code)}</div></div>
+      <div class="small mute" style="flex:1;min-width:200px">${t('Single-use; it must be used within <b data-pexp="{exp}">10:00</b>. When the code is used, a new key is created for {name} and written straight into the client\'s settings; any old key stops working.', { exp: esc(exp), name: esc(name) })}</div></div></div>
+    ${body}`;
+}
+function bindPairing(d) {
+  bindCopy(d);
+  $$('[data-ptab]', d).forEach(b => b.onclick = () => { $$('[data-ptab]', d).forEach(x => x.classList.toggle('on', x === b)); $$('[data-ppane]', d).forEach(p => p.hidden = p.dataset.ppane !== b.dataset.ptab); });
+  const el = $('[data-pexp]', d); if (!el) return;
+  const end = new Date(el.dataset.pexp);
+  const tick = () => { const s = Math.max(0, Math.round((end - Date.now()) / 1000)); el.textContent = s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : t('expired'); if (!s) clearInterval(iv); };
+  const iv = setInterval(tick, 1000); tick(); d.addEventListener('close', () => clearInterval(iv), { once: true });
+}
+function connectSnippet(tok, base) {
+  return `<label class="f">Claude Code <span class="hint">${t('available in every project')}</span></label>
+    <div class="copyline"><pre>claude mcp add --scope user --transport http gateway ${esc(base)}/mcp --header "Authorization: Bearer ${esc(tok)}"</pre>${copyBtn(`claude mcp add --scope user --transport http gateway ${base}/mcp --header "Authorization: Bearer ${tok}"`)}</div>
+    <label class="f">${t('Other MCP clients')}</label><dl class="kv" style="padding:0;grid-template-columns:90px 1fr"><dt>${t('URL')}</dt><dd class="mono">${esc(base)}/mcp</dd><dt>Header</dt><dd class="mono">Authorization: Bearer ${esc(tok)}</dd></dl>`;
+}
+function agentSheet(a) {
+  const { st, servers } = window.__ctx;
+  const isNew = !a;
+  a = a || { id: '', name: '', allow: [], deny: [], can_manage: false };
+  const allow = new Set(a.allow || []);
+  const limited = allow.size > 0;
+  const tree = servers.map(s => `<div class="srv"><label class="check" style="padding:2px 0">${iconHTML(s.config.name, s.icon, 20)}<input type="checkbox" data-srv="${esc(s.config.id)}" ${allow.has(s.config.id + '.*') ? 'checked' : ''}> <b>${esc(s.config.name)}</b> <span class="mute small">${t('all tools')}</span></label></div>`).join('');
+  openSheet(`<div class="sheet-h">${iconHTML(a.name || a.id || '+', '', 40)}<div class="grow"><h2 style="font-size:17px">${isNew ? t('New agent') : esc(a.name || a.id)}</h2><div class="mute small">${isNew ? t('A pairing code is shown after you save') : t('Last seen: {when}', { when: a.last_seen ? relTime(a.last_seen) : t('never') })}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="af" class="sheet-b" autocomplete="off">
+      <div class="grid2"><div><label class="f">${t('Name')}</label><input name="name" value="${esc(a.name)}" placeholder="${t('Codex (laptop)')}" required></div>
+      <div><label class="f">${t('ID')}</label><input name="id" class="mono" value="${esc(a.id)}" ${isNew ? '' : 'disabled'} placeholder="codex-laptop" pattern="[a-z0-9][a-z0-9-]*" required></div></div>
+      <label class="f">${t('What can it access?')}</label>
+      <label class="opt ${!limited ? 'on' : ''}"><input type="radio" name="scope" value="all" ${!limited ? 'checked' : ''}><span><b>${t('All connections')}</b><div class="mute small">${t('Including ones added later.')}</div></span></label>
+      <label class="opt ${limited ? 'on' : ''}"><input type="radio" name="scope" value="some" ${limited ? 'checked' : ''}><span><b>${t('Only the ones I pick')}</b><div class="mute small">${t('Pick connections below.')}</div></span></label>
+      <div id="treebox" ${limited ? '' : 'hidden'}><div class="tree">${tree || `<div class="srv mute">${t('No connections yet.')}</div>`}</div></div>
+      <label class="f">${t('Denied tools <span class="hint">comma-separated; always take precedence. E.g. <span class="mono">*.delete_*</span></span>')}</label><input name="deny" class="mono" value="${esc((a.deny || []).join(', '))}">
+      <label class="f">${t('Tool mode')}</label>
+      <label class="opt ${!a.tool_mode ? 'on' : ''}"><input type="radio" name="tmode" value="" ${!a.tool_mode ? 'checked' : ''}><span><b>${t('Default')}</b> <span class="mute small">(${t('currently {mode}', { mode: esc(TOOLMODE[window.__ctx.tm.default_mode][0]) })})</span></span></label>
+      ${Object.entries(TOOLMODE).map(([k, [l, dsc]]) => `<label class="opt ${a.tool_mode === k ? 'on' : ''}"><input type="radio" name="tmode" value="${k}" ${a.tool_mode === k ? 'checked' : ''}><span><b>${l}</b> <span class="mute small" data-fp="${k}"></span><div class="mute small">${esc(dsc)}${k === 'auto' ? ` (${t('limit: {n} tools', { n: window.__ctx.tm.auto_max })})` : k === 'direct' ? ` ${t('At most {n} tools are listed; the rest are found by search.', { n: window.__ctx.tm.direct_max })}` : ''}</div></span></label>`).join('')}
+      <p class="help">${t('You can also pick a mode for a single client by adding <span class="mono">?tools=lazy</span> or <span class="mono">?tools=direct</span> to the connection URL. Permissions, approvals and logs are the same in every mode. Agents usually fetch the tool list once at startup, so a change applies after they reconnect.')}</p>
+      <label class="f">${t('Key lifetime')} <span class="hint">${t('if you change it, it counts from today')}</span></label>${ttlSelect(a.token_ttl_days)}
+      ${isNew ? '' : `<p class="help">${expiryText(a.expires_at)}</p>`}
+      <label class="check" style="margin-top:14px"><input type="checkbox" class="switch" name="manage" ${a.can_manage ? 'checked' : ''}><span><b>${t('Can manage the gateway')}</b><div class="mute small">${t('Can add and remove connections, start sign-ins, and write new credentials to the vault (but not read them).')}</div></span></label>
+      <details class="adv"><summary>${t('Advanced: permission rules')}</summary><label class="f">${t('Allowed patterns <span class="hint">comma-separated <span class="mono">connection.tool</span> globs</span>')}</label><input name="allowRaw" class="mono" value="${esc((a.allow || []).join(', '))}"></details>
+      ${isNew ? '' : `<div class="panel" style="margin-top:20px"><div class="panel-h"><h3>${t('Connection key')}</h3></div><div style="padding:14px 18px"><p class="small mute">${t('For security, the key is only shown when it is created. If you lost it, create a new one; the old one stops working immediately.')}</p><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="pairA">${t('Pairing code')}</button><button type="button" id="rot">${I.refresh} ${t('Show a new key')}</button><button type="button" id="peek">${t('What does it see?')}</button></div><div id="extra"></div></div></div>`}
+      ${isNew ? `<label class="check" style="margin-top:16px"><input type="checkbox" name="showtok"><span><b>${t('Show the key instead of a pairing code')}</b><div class="mute small">${t('The code writes the key into the client\'s settings without ever showing it; pick this if you\'d rather copy the key yourself.')}</div></span></label>` : ''}
+    </form>
+    <div class="sheet-f">${isNew ? '' : `<button class="danger" id="delA" type="button" style="margin-right:auto">${t('Delete')}</button>`}<button data-close>${t('Cancel')}</button><button class="pri" form="af">${isNew ? t('Add agent') : t('Save')}</button></div>`, d => {
+    const f = $('#af', d);
+    $$('input[name=scope]', d).forEach(r => r.onchange = () => { $('#treebox', d).hidden = r.value !== 'some' || !r.checked; $$('.opt', d).forEach(o => o.classList.toggle('on', $('input', o).checked)); });
+    $$('input[name=tmode]', d).forEach(r => r.onchange = () => $$('.opt', d).forEach(o => o.classList.toggle('on', $('input', o).checked)));
+    if (!isNew) api('GET', `/api/agents/${enc(a.id)}/view`).then(v => {
+      const fp = v.modes || {};
+      ['lazy', 'direct'].forEach(k => { const el = $(`[data-fp="${k}"]`, d); if (el && fp[k]) el.textContent = `· ${pl(fp[k].tools, '{n} tool', '{n} tools')}, ~${kb(fp[k].bytes)}`; });
+      const el = $('[data-fp="auto"]', d); if (el) el.textContent = `· ${t('currently {mode} for this agent', { mode: TOOLMODE[v.auto_mode][0] })}`;
+    }).catch(() => {});
+    const showTok = tok => { $('.sheet-b', d).innerHTML = `<div class="callout ok" style="margin-top:16px"><div class="grow"><b>${t('The connection key is ready.')}</b>${t(' It won\'t be shown again after you close this screen.')}</div></div>${connectSnippet(tok, st.base_url)}`; bindCopy(d); $('.sheet-f', d).innerHTML = `<button class="pri" data-close>${t('Done')}</button>`; $$('[data-close]', d).forEach(b => b.onclick = () => d.close()); d.addEventListener('close', () => route(), { once: true }); };
+    const showPair = (pr, name) => { $('.sheet-b', d).innerHTML = pairingHTML('agent', pr.code, pr.expires_at, st.base_url, name); bindPairing(d); $('.sheet-f', d).innerHTML = `<button class="pri" data-close>${t('Done')}</button>`; $$('[data-close]', d).forEach(b => b.onclick = () => d.close()); d.addEventListener('close', () => route(), { once: true }); };
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const split = s => s.split(',').map(x => x.trim()).filter(Boolean);
+      let allowList = [];
+      if (f.elements.scope.value === 'some') {
+        allowList = $$('[data-srv]', d).filter(c => c.checked).map(c => c.dataset.srv + '.*');
+        const raw = split(f.elements.allowRaw.value).filter(x => !x.endsWith('.*') || !servers.some(s => s.config.id + '.*' === x));
+        allowList = [...new Set([...allowList, ...raw])];
+        if (!allowList.length) return toast(t('Pick at least one connection'));
+      }
+      const body = { ...a, id: isNew ? f.elements.id.value.trim() : a.id, name: f.elements.name.value.trim(), allow: allowList, deny: split(f.elements.deny.value), can_manage: f.elements.manage.checked, tool_mode: f.elements.tmode.value, token_ttl_days: +f.elements.ttl.value, pair: isNew && !f.elements.showtok.checked };
+      try { const r = await api('POST', '/api/agents', body); if (r.pairing) showPair(r.pairing, body.name || body.id); else if (r.token) showTok(r.token); else { d.close(); toast(t('Saved')); route(); } } catch (e) { toast(e.message); }
+    };
+    if (!isNew) {
+      $('#pairA', d).onclick = async () => { if (a.last_seen && !confirm(t('When the code is used, a new key is created for this agent and the current key stops working. Continue?'))) return; try { showPair(await api('POST', `/api/agents/${enc(a.id)}/pair`), a.name || a.id); } catch (e) { toast(e.message); } };
+      $('#rot', d).onclick = async () => { if (!confirm(t('The old key will stop working immediately, and you\'ll need to update this agent\'s settings with the new key. Continue?'))) return; const r = await api('POST', `/api/agents/${enc(a.id)}/rotate`); showTok(r.token); };
+      $('#peek', d).onclick = async () => { const v = await api('GET', `/api/agents/${enc(a.id)}/view`); const fp = (v.modes || {})[v.effective_mode] || {}; $('#extra', d).innerHTML = `<p class="small mute" style="margin-top:12px">${t('Currently in <b>{mode}</b> mode: {n} tools, ~{size}. When the agent connects, it gets this summary:', { mode: esc(TOOLMODE[v.effective_mode][0]), n: fp.tools || 0, size: kb(fp.bytes || 0) })}</p><pre>${esc(v.instructions)}</pre>`; };
+      $('#delA', d).onclick = async () => { if (confirm(`${t('Delete {name}? Its key stops working immediately.', { name: a.name || a.id })}`)) { await api('DELETE', '/api/agents/' + enc(a.id)); d.close(); toast(t('Deleted')); route(); } };
+    }
+  });
+}
+
+// ---------------------------------------------------------------- Vault
+const poolKeyMatch = (prefix, n) => n === prefix || (n.startsWith(prefix + '_') && /^[A-Z0-9_]+$/.test(n.slice(prefix.length + 1)));
+const GEMSTATE = lazy(() => ({ ready: ['ok', t('Ready')], cooling: ['warn', t('Cooling down')], daily: ['warn', t('Quota used up')], invalid: ['bad', t('Invalid')] }));
+function untilText(ts) {
+  if (!ts) return '';
+  const d = new Date(ts), mins = Math.round((d - Date.now()) / 60000);
+  return mins < 60 ? t('in {n} min', { n: Math.max(mins, 1) }) : t('at {time}', { time: d.toLocaleTimeString(LOCALE(), { hour: '2-digit', minute: '2-digit' }) });
+}
+function poolCard(p) {
+  const c = p.config, prov = p.provider || {}, keys = p.keys || [];
+  const ready = keys.filter(k => k.state === 'ready').length;
+  const row = k => {
+    const [tone, label] = GEMSTATE[k.state] || ['', k.state], u = k.usage || {};
+    const why = k.state === 'invalid' ? esc(k.reason || '') : (k.until ? t('{reason}, back {when}', { reason: esc(k.reason || ''), when: untilText(k.until) }) : '');
+    return `<div class="r">${I.key.replace('<svg', '<svg style="width:18px;height:18px;color:var(--mute);flex:none"')}
+      <div class="main"><span class="mono" style="font-weight:600">${esc(k.name)}</span> <span class="pill ${tone}"><span class="dot"></span>${label}</span>
+        <div class="sub">${why || (k.note ? esc(k.note) : t('Ready to use'))}</div></div>
+      <div class="meta">${pl(u.calls || 0, 'Today: {n} request', 'Today: {n} requests')}${u.rate_limited ? ` · ${t('{n} rate-limited', { n: u.rate_limited })}` : ''}${u.errors && u.errors !== u.rate_limited ? ` · ${pl(u.errors, '{n} error', '{n} errors')}` : ''}<br><span class="small">${u.last_used ? t('Last: {when}', { when: relTime(u.last_used) }) : t('Not used yet')}</span></div>
+      ${p.can_check ? `<button data-pcheck="${esc(c.id)}" data-key="${esc(k.name)}">${t('Try')}</button>` : ''}<button data-set="${esc(k.name)}">${t('Change')}</button><button class="ghost danger" data-rm="${esc(k.name)}" aria-label="${t('Delete')}">${I.x}</button></div>`;
+  };
+  const gem = c.id === 'gemini';
+  const where = `${t('The key is sent in the <span class="mono">{header}</span> header', { header: esc(p.header || '?') })}${c.header_prefix ? ` (<span class="mono">${esc(c.header_prefix.trim())} …</span>)` : prov.value_prefix ? ` (<span class="mono">${esc(prov.value_prefix.trim())} …</span>)` : ''}${t('; it never goes into the URL.')}`;
+  const empty = gem ? t('Add at least one Gemini API key so your agents can generate speech (TTS). If you add several, the gateway takes turns between them and moves on to the next when one hits its quota.')
+    : `${t('Keys named <span class="mono">{prefix}</span> or <span class="mono">{prefix}_…</span> go into this pool. If you add several, the gateway spreads calls across them and moves on to the next when one hits a rate limit.', { prefix: esc(c.prefix) })}`;
+  return `<div class="panel" id="pool-${esc(c.id)}"><div class="panel-h"><h2>${esc(c.name)}</h2>${(prov.label || c.provider) !== c.name ? `<span class="pill">${esc(prov.label || c.provider)}</span>` : ''}${keys.length ? `<span class="pill ${ready ? 'ok' : 'warn'}">${t('{ready}/{all} ready', { ready: ready, all: keys.length })}</span>` : ''}<span class="grow"></span>
+      <button class="ghost small" data-pedit="${esc(c.id)}">${t('Settings')}</button><button class="pri" data-padd="${esc(c.id)}">${I.plus} ${t('Add key')}</button></div>
+    ${keys.length ? `<div class="rows">${keys.map(row).join('')}</div>` : `<div class="empty"><p>${empty}</p></div>`}
+    <div style="padding:12px 18px;border-top:1px solid var(--line2)"><div class="help" style="margin:0">${prov.key_url ? `${t('Get a key at <a href="{url}" target="_blank" rel="noopener">{host}</a>. ', { url: esc(prov.key_url), host: esc(hostOfUrl(prov.key_url)) })}` : ''}${prov.hint ? esc(prov.hint) + ' ' : ''}${where}${gem ? (p.server ? (p.enabled ? '' : t(' <b>The Gemini connection is off</b>; you can turn it on from the Connections page.')) : t(' <b>The Gemini connection has been removed.</b>')) + ` ${t('Generated files:')} <span class="mono">${esc(p.output_dir || '')}</span>` : ''}</div>
+      <div class="help" style="margin:6px 0 0">${t('For your own programs:')} <span class="mono">${esc(location.origin)}/proxy/${esc(c.id)}</span> · ${p.apps ? `${pl(p.apps, '{n} app uses it', '{n} apps use it')} · ` : ''}<a href="#agents?app=new&pool=${enc(c.id)}">${t('Add app')}</a></div></div></div>`;
+}
+function poolSheet(providers, pools, existing) {
+  const isNew = !existing, c = existing ? existing.config : { provider: 'openai' };
+  const provOpts = providers.filter(pr => isNew || pr.id === c.provider).map(pr => `<label class="opt ${c.provider === pr.id ? 'on' : ''}"><input type="radio" name="prov" value="${esc(pr.id)}" ${c.provider === pr.id ? 'checked' : ''} ${isNew ? '' : 'disabled'}><span><b>${esc(pr.label)}</b><div class="mute small">${pr.id === 'custom' ? t('You set the header name and prefix. On a 429, the gateway waits as long as Retry-After says.') : `${t('The key is sent in the <span class="mono">{header}</span> header. Suggested name: <span class="mono">{prefix}_1</span>', { header: esc(pr.header), prefix: esc(pr.prefix) })}`}</div></span></label>`).join('');
+  const taken = new Set(pools.map(p => p.config.id));
+  openSheet(`<div class="sheet-h"><div class="grow"><h2 style="font-size:17px">${isNew ? t('Add pool') : esc(c.name)}</h2><div class="mute small">${isNew ? t('Collect several keys for the same service in one pool') : t('Pool settings')}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="pf" class="sheet-b" autocomplete="off">
+      <label class="f">${t('Provider')}</label>${provOpts}
+      <div class="grid2"><div><label class="f">${t('Name')}</label><input name="name" value="${esc(c.name || '')}" placeholder="OpenAI"></div>
+      <div><label class="f">${t('ID')}</label><input name="id" class="mono" value="${esc(c.id || '')}" ${isNew ? '' : 'disabled'} pattern="[a-z0-9][a-z0-9-]*" placeholder="openai" required></div></div>
+      <label class="f">${t('Key name prefix <span class="hint">vault entries named <span class="mono">PREFIX</span> and <span class="mono">PREFIX_*</span> go into this pool</span>')}</label>
+      <input name="prefix" class="mono" value="${esc(c.prefix || '')}" ${c.id === 'gemini' ? 'disabled' : ''} pattern="[A-Z][A-Z0-9_]+" placeholder="OPENAI_API_KEY" required>
+      <div id="custom" ${c.provider === 'custom' ? '' : 'hidden'}>
+        <div class="grid2"><div><label class="f">${t('Header name')}</label><input name="header" class="mono" value="${esc(c.header || '')}" placeholder="Authorization"></div>
+        <div><label class="f">${t('Value prefix')} <span class="hint">${t('optional')}</span></label><input name="header_prefix" class="mono" value="${esc(c.header_prefix || '')}" placeholder="Bearer "></div></div>
+        <div class="grid2"><div><label class="f">${t('API URL')} <span class="hint">${t('optional')}</span></label><input name="base_url" class="mono" value="${esc(c.base_url || '')}" placeholder="https://api.example.com"></div>
+        <div><label class="f">${t('Check path')} <span class="hint">${t('GET; optional')}</span></label><input name="check_path" class="mono" value="${esc(c.check_path || '')}" placeholder="/v1/me"></div></div>
+      </div>
+      ${c.id === 'gemini' ? `<p class="help">${t('The Gemini pool\'s provider and prefix are fixed; the built-in <span class="mono">gemini</span> connection and existing keys rely on them.')}</p>` : ''}
+      ${!isNew && c.id !== 'gemini' ? `<p class="help">${t('Removing the pool does not delete its keys; they stay in the vault.')}</p>` : ''}
+    </form>
+    <div class="sheet-f">${!isNew && c.id !== 'gemini' ? `<button class="danger" id="pdel" type="button" style="margin-right:auto">${t('Remove pool')}</button>` : ''}<button data-close>${t('Cancel')}</button><button class="pri" form="pf">${isNew ? t('Add pool') : t('Save')}</button></div>`, d => {
+    const f = $('#pf', d);
+    const sync = first => {
+      const pr = providers.find(x => x.id === f.elements.prov.value) || {};
+      $$('.opt', d).forEach(o => o.classList.toggle('on', $('input', o).checked));
+      $('#custom', d).hidden = pr.id !== 'custom';
+      if (isNew && !first) {
+        f.elements.name.value = pr.id === 'custom' ? '' : pr.label;
+        f.elements.prefix.value = pr.prefix || '';
+        let id = pr.id === 'custom' ? '' : pr.id, i = 2;
+        while (id && taken.has(id)) id = `${pr.id}-${i++}`;
+        f.elements.id.value = id;
+      }
+    };
+    $$('input[name=prov]', d).forEach(r => r.onchange = () => sync(false));
+    if (isNew) sync(false);
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const e = f.elements, body = { id: isNew ? e.id.value.trim() : c.id, name: e.name.value.trim(), provider: isNew ? e.prov.value : c.provider, prefix: c.id === 'gemini' ? c.prefix : e.prefix.value.trim() };
+      if (body.provider === 'custom') Object.assign(body, { header: e.header.value.trim(), header_prefix: e.header_prefix.value, base_url: e.base_url.value.trim(), check_path: e.check_path.value.trim() });
+      try { await api('POST', '/api/pools', body); d.close(); toast(isNew ? t('Pool added') : t('Saved')); route(); } catch (err) { toast(err.message); }
+    };
+    const del = $('#pdel', d);
+    if (del) del.onclick = async () => { if (!confirm(`${t('Remove the {name} pool? The keys stay in the vault.', { name: c.name })}`)) return; try { await api('DELETE', '/api/pools/' + enc(c.id)); d.close(); toast(t('Pool removed')); route(); } catch (err) { toast(err.message); } };
+  });
+}
+
+views.vault = async ({ params }) => {
+  const [list, pl, st] = await Promise.all([api('GET', '/api/secrets'), api('GET', '/api/pools').catch(() => ({ pools: [], providers: [] })), api('GET', '/api/status')]);
+  const pools = pl.pools || [];
+  const want = params.get('new') || '', note = params.get('note') || '';
+  views.vault.after = () => {
+    if (want) secretSheet(want, note, list.find(s => s.name === want));
+    const ps = params.get('pool');
+    if (ps) poolSheet(pl.providers || [], pools, ps === 'new' ? null : pools.find(p => p.config.id === ps));
+    $('#newS').onclick = () => secretSheet('', '', null);
+    $('#addPool').onclick = () => poolSheet(pl.providers || [], pools, null);
+    $$('[data-pedit]').forEach(b => b.onclick = () => poolSheet(pl.providers || [], pools, pools.find(p => p.config.id === b.dataset.pedit)));
+    $$('[data-padd]').forEach(b => b.onclick = () => { const p = pools.find(x => x.config.id === b.dataset.padd); secretSheet(p.next_name, `${p.config.name} API key`, null, { intro: `${t('You are adding a new key to the {name} pool. The value is stored encrypted; agents and apps cannot see it.', { name: p.config.name })}` }); });
+    $$('[data-pcheck]').forEach(b => b.onclick = async () => {
+      b.disabled = true; b.textContent = t('Checking…');
+      try { const r = await api('POST', `/api/pools/${enc(b.dataset.pcheck)}/check`, { name: b.dataset.key }); toast(r.ok ? t('The key works') : t('Failed: {error}', { error: r.error })); }
+      catch (e) { toast(e.message); }
+      route();
+    });
+    $$('[data-set]').forEach(b => b.onclick = () => secretSheet(b.dataset.set, '', list.find(s => s.name === b.dataset.set)));
+    $$('[data-rm]').forEach(b => b.onclick = async () => { if (confirm(`${t('Delete {name}? Connections that use it will stop working.', { name: b.dataset.rm })}`)) { await api('DELETE', '/api/secrets/' + enc(b.dataset.rm)); toast(t('Deleted')); refreshCounts(); route(); } });
+  };
+  const inPool = n => pools.some(p => poolKeyMatch(p.config.prefix, n));
+  const missing = list.filter(s => !s.has_value), have = list.filter(s => s.has_value && !inPool(s.name));
+  const row = s => `<div class="r">${I.key.replace('<svg', '<svg style="width:18px;height:18px;color:var(--mute);flex:none"')}
+    <div class="main"><span class="mono" style="font-weight:600">${esc(s.name)}</span><div class="sub">${s.note ? esc(s.note) + ' · ' : ''}${(s.used_by || []).length ? t('Used by: {list}', { list: s.used_by.map(esc).join(', ') }) : t('Not used by any connection')}</div></div>
+    <div class="meta">${s.has_value ? relTime(s.updated_at) : ''}</div>
+    ${s.has_value ? `<button data-set="${esc(s.name)}">${t('Change')}</button><button class="ghost danger" data-rm="${esc(s.name)}" aria-label="${t('Delete')}">${I.x}</button>` : `<button class="pri" data-set="${esc(s.name)}">${t('Enter value')}</button>`}</div>`;
+  const keyWhere = st.vault === 'keychain' ? t('is kept in the macOS Keychain')
+    : t('is kept in the <span class="mono">master.key</span> file in the gateway\'s data folder (in an isolated install, only the service user can read that folder)');
+  return `<div class="head"><div><h1>${t('Vault')}</h1><p class="lede">${t('API keys, tokens and connection credentials are stored here, encrypted. Agents can use them but never see them.')}</p></div>
+      <div class="actions"><button class="pri" id="newS">${I.plus} ${t('Add credential')}</button></div></div>
+    <div class="head" style="margin-top:4px"><div><h2 style="font-size:17px">${t('Key pools')}</h2><p class="help" style="margin:2px 0 0">${t('Several keys for the same service: the gateway spreads calls across them, rests a key that hits a rate limit, and disables invalid ones.')}</p></div>
+      <div class="actions"><button id="addPool">${I.plus} ${t('Add pool')}</button></div></div>
+    ${pools.map(poolCard).join('')}
+    ${missing.length ? `<div class="panel"><div class="panel-h"><h2>${t('Missing credentials')}</h2><span class="pill warn">${missing.length}</span><span class="mute small">${t('A connection is waiting for these')}</span></div><div class="rows">${missing.map(row).join('')}</div></div>` : ''}
+    <div class="panel"><div class="panel-h"><h2>${t('Stored credentials')}</h2><span class="mute small">${have.length}</span></div>
+      ${have.length ? `<div class="rows">${have.map(row).join('')}</div>` : `<div class="empty"><p>${t('The vault is empty. Credentials you enter while adding connections are stored here.')}</p></div>`}</div>
+    <p class="help" style="margin-top:14px">${t('The encryption key {where}. In connection settings, refer to a credential as <span class="mono">${secret:NAME}</span>.', { where: keyWhere })}</p>`;
+};
+function secretSheet(name, note, existing, opts = {}) {
+  openSheet(`<div class="sheet-h"><div class="grow"><h2 style="font-size:17px">${name ? esc(name) : t('New credential')}</h2><div class="mute small">${existing && existing.has_value ? t('Change value') : t('Add to vault')}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="sf2" class="sheet-b" autocomplete="off">
+      ${opts.intro ? `<div class="callout info" style="margin-top:16px"><div class="grow small">${esc(opts.intro)}</div></div>` : ''}
+      ${name && !opts.intro && !(existing && existing.has_value) ? `<div class="callout info" style="margin-top:16px"><div class="grow small">${(existing && (existing.used_by || []).length) ? `${t('The <b>{list}</b> connection is waiting for this credential.', { list: existing.used_by.map(esc).join(', ') })}` : t('An agent asked for this credential.')}${note ? ` ${t('Note: {note}', { note: esc(note) })}` : ''}${t(' The value is never shown to the agent.')}</div></div>` : ''}
+      <label class="f">${t('Name')}</label><input name="name" class="mono" value="${esc(name)}" ${name ? 'readonly' : ''} placeholder="GITHUB_TOKEN" required>
+      <label class="f">${t('Value')}</label><input name="value" type="password" required autofocus>
+      <label class="f">${t('Note')} <span class="hint">${t('optional')}</span></label><input name="note" value="${esc(note || (existing && existing.note) || '')}">
+    </form>
+    <div class="sheet-f"><button data-close>${t('Cancel')}</button><button class="pri" form="sf2">${t('Save')}</button></div>`, d => {
+    const f = $('#sf2', d);
+    setTimeout(() => (name ? f.elements.value : f.elements.name).focus(), 50);
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      try { await api('POST', '/api/secrets', { name: f.elements.name.value.trim(), value: f.elements.value.value, note: f.elements.note.value }); d.close(); toast(t('Saved')); history.replaceState(null, '', '#vault'); refreshCounts(); route(); }
+      catch (e) { toast(e.message); }
+    };
+  });
+}
+
+// ---------------------------------------------------------------- Activity
+const UIACT = lazy(() => ({ set_oauth_client: t('entered an OAuth client'), approve: t('approved a change'), reject: t('rejected a change'),  upsert_server: t('saved a connection'), remove_server: t('removed a connection'), catalog_install: t('added a connection'), set_secret: t('wrote a credential to the vault'), delete_secret: t('deleted a credential from the vault'), create_agent: t('added an agent'), update_agent: t('changed agent settings'), rotate_agent_token: t('rotated an agent key'), delete_agent: t('deleted an agent'), put_pool: t('saved a key pool'), delete_pool: t('removed a key pool'), pool_check: t('checked a key'), gemini_check: t('checked a key'), audit_settings: t('changed the log settings'), tool_mode_default: t('changed the default tool mode'), create_pairing: t('created a pairing code'), dismiss_search_miss: t('dismissed a missed search'), create_app: t('added an app'), update_app: t('changed app settings'), rotate_app_token: t('rotated an app key'), delete_app: t('deleted an app') }));
+function describeEvent(e) {
+  const tg = esc(e.target);
+  const a = e.action;
+  if (a === 'call_tool') return t('called {tool}', { tool: `<span class="mono">${tg}</span>` });
+  if (a === 'pair') return e.status === 'ok' ? t('got a new key with a pairing code') : `${t('tried a wrong pairing code')} ${pill('bad', t('rejected'))}`;
+  if (a === 'proxy') { const [pool, method, ...rest] = (e.target || '').split(' '); return `API proxy: <b>${esc(pool || '')}</b> <span class="mono small">${esc(method || '')} ${esc(rest.join(' '))}</span>`; }
+  if (a === 'search_tools') {
+    const m = /^(\d+) results(?: \((\w+)\))?/.exec(e.detail || '');
+    const how = m && { strict: '', loose: t(', loose match'), none: '', all: t(', all') }[m[2] || ''];
+    return m ? (m[2] === 'none' ? `${t('searched tools')} ${pill('warn', t('not found'))}` : `${t('searched tools')} <span class="mute">(${pl(+m[1], '{n} result', '{n} results')}${how || ''})</span>`) : t('searched tools');
+  }
+  if (a === 'describe_tools') return t('looked at tool schemas');
+  if (a === 'overview') return t('got the overview');
+  if (a === 'connect') return e.status === 'ok' ? t('connected to {name}', { name: `<b>${tg}</b>` }) : t('couldn\'t connect to {name}', { name: `<b>${tg}</b>` });
+  if (a === 'oauth_required') return t('waiting for sign-in to {name}', { name: `<b>${tg}</b>` });
+  if (a === 'oauth_complete') return e.status === 'ok' ? t('sign-in to {name} completed', { name: `<b>${tg}</b>` }) : t('sign-in to {name} was denied', { name: `<b>${tg}</b>` });
+  if (a.startsWith('manage.')) return `${t('manage:')} <span class="mono">${esc(a.slice(7))}</span>${tg ? ` <b>${tg}</b>` : ''}`;
+  if (a.startsWith('ui.')) return `${esc(UIACT[a.slice(3)] || a.slice(3).replaceAll('_', ' '))}${tg ? ` <b>${tg}</b>` : ''}`;
+  return `${esc(a)} ${tg}`;
+}
+const ACTOR = lazy(() => ({ 'admin-ui': t('Admin panel'), gateway: 'Gateway', 'ui:test': t('Panel test') }));
+const actorName = a => ACTOR[a] || (a.startsWith('ui:test:') ? `${t('Panel test (as {agent})', { agent: a.slice(8) })}` : a.startsWith('app:') ? `${t('App {name}', { name: a.slice(4) })}` : a);
+const EV_TONE = { rate_limited: 'warn', pending_approval: 'warn', ok: 'ok', denied: 'bad', error: 'bad', tool_error: 'warn', auth_required: 'warn', pending: 'warn' };
+const EV_LABEL = lazy(() => ({ rate_limited: t('rate limited'), pending_approval: t('awaiting approval'),  denied: t('blocked'), error: t('error'), tool_error: t('tool returned an error'), auth_required: t('sign-in required'), pending: t('pending') }));
+async function activityList({ agent = '', q = '', server = '', status = '', limit = 300 }) {
+  let list = await api('GET', `/api/audit?limit=${limit}&agent=${enc(agent)}&q=${enc(q)}&server=${enc(server)}`);
+  if (status === 'problems') list = list.filter(e => ['denied', 'error', 'tool_error', 'auth_required', 'pending_approval'].includes(e.status));
+  if (!list.length) return `<div class="panel"><div class="empty"><p>${server ? t('This connection has not been used yet.') : t('No entries.')}</p></div></div>`;
+  const days = {};
+  list.forEach(e => { const k = new Date(e.ts).toLocaleDateString(LOCALE(), { weekday: 'long', day: 'numeric', month: 'long' }); (days[k] = days[k] || []).push(e); });
+  const today = new Date().toLocaleDateString(LOCALE(), { weekday: 'long', day: 'numeric', month: 'long' });
+  return Object.entries(days).map(([day, evs]) => `<div class="day">${day === today ? t('Today') : esc(day)}</div><div class="panel">${evs.map(e => `<div class="ev">
+      <span class="time">${new Date(e.ts).toLocaleTimeString(LOCALE(), { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}</span>
+      <span class="dot ${EV_TONE[e.status] || ''}" style="margin-top:7px" title="${esc(e.status)}"></span>
+      <div class="what"><details><summary><b>${esc(actorName(e.agent))}</b> ${describeEvent(e)} ${EV_LABEL[e.status] ? pill(EV_TONE[e.status], EV_LABEL[e.status]) : ''}</summary>
+        ${argsHTML(e.args)}${e.detail ? `<pre>${esc(e.detail)}</pre>` : ''}</details></div>
+      <span class="ms">${e.duration_ms ? e.duration_ms + ' ms' : ''}</span></div>`).join('')}</div>`).join('');
+}
+// keys-mode rows store {"name":"…"}; show them as a list of argument names
+function argsHTML(a) {
+  if (!a || a === '{}' || a === 'null') return '';
+  try {
+    const names = [], walk = (o, p) => Object.entries(o).every(([k, v]) => v === '…' ? names.push(p + k) : v && typeof v === 'object' && !Array.isArray(v) && walk(v, p + k + '.'));
+    const o = JSON.parse(a);
+    if (o && typeof o === 'object' && !Array.isArray(o) && walk(o, '') && names.length) return `<div class="small mute" style="margin:6px 0">${t('Argument names (values not stored):')} <span class="mono">${names.map(esc).join(', ')}</span></div>`;
+  } catch {}
+  return `<pre>${esc(a)}</pre>`;
+}
+const AUDIT_ARGS = lazy(() => ({
+  full: [t('With values'), t('Tool arguments are stored with their values. Fields that look like passwords or tokens are masked. A short excerpt of each successful result is stored too.')],
+  keys: [t('Names only'), t('Only argument names are stored (e.g. title, repo). Values and the results of successful calls are not. The text of tool searches that found nothing is still kept, so you can spot missing connections.')],
+  none: [t('Nothing'), t('Neither tool arguments nor the results of successful calls are stored; only which tool was called and when. The text of searches that found nothing is not stored either, only counted.')],
+}));
+function auditSettingsSheet(st) {
+  openSheet(`<div class="sheet-h"><div class="grow"><h2 style="font-size:17px">${t('Log settings')}</h2><div class="mute small">${t('How long, and in how much detail, activity is kept')}</div></div><button class="ghost" data-close aria-label="${t('Close')}">${I.x}</button></div>
+    <form id="asf" class="sheet-b">
+      <label class="f" for="ret">${t('Retention (days)')} <span class="hint">${t('older entries are deleted hourly')}</span></label>
+      <input id="ret" name="ret" type="number" min="1" max="3650" value="${st.retention_days}" ${st.retention_fixed ? 'disabled' : ''} style="max-width:140px">
+      ${st.retention_fixed ? `<p class="help">${t('This was fixed with the <span class="mono">-audit-retention-days</span> flag when the gateway started.')}</p>` : ''}
+      <label class="f" style="margin-top:18px">${t('Tool arguments')}</label>
+      ${Object.entries(AUDIT_ARGS).map(([k, [l, d]]) => `<label class="opt ${st.args === k ? 'on' : ''}"><input type="radio" name="am" value="${k}" ${st.args === k ? 'checked' : ''}><span><b>${l}</b><div class="mute small">${esc(d)}</div></span></label>`).join('')}
+      <p class="help">${t('Admin actions such as adding a connection or changing settings are security records, so they are kept in every mode (secret fields are masked).')}</p>
+      <label class="check" id="scrubRow" style="margin-top:14px" ${st.args === 'full' ? 'hidden' : ''}><input type="checkbox" name="scrub"><span><b>${t('Also clean up older entries to match')}</b><div class="mute small">${t('Arguments and result excerpts stored earlier with their values are deleted. This cannot be undone.')}</div></span></label>
+      <p class="help" style="margin-top:14px">${pl(st.rows, 'There is {n} entry', 'There are {n} entries')}${st.oldest ? `${t('; the oldest is from {when}', { when: esc(relTime(st.oldest)) })}` : ''}.</p>
+    </form>
+    <div class="sheet-f"><button data-close>${t('Cancel')}</button><button class="pri" form="asf">${t('Save')}</button></div>`, d => {
+    const f = $('#asf', d);
+    $$('input[name=am]', d).forEach(r => r.onchange = () => { $$('.opt', d).forEach(o => o.classList.toggle('on', $('input', o).checked)); $('#scrubRow', d).hidden = f.elements.am.value === 'full'; });
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      try {
+        const r = await api('POST', '/api/settings/audit', { retention_days: st.retention_fixed ? 0 : +f.elements.ret.value, args: f.elements.am.value, scrub_existing: f.elements.am.value !== 'full' && f.elements.scrub.checked });
+        d.close(); toast(`${t('Saved')}${r.pruned ? ` · ${pl(r.pruned, '{n} old entry deleted', '{n} old entries deleted')}` : ''}${r.scrubbed ? ` · ${pl(r.scrubbed, '{n} entry cleaned up', '{n} entries cleaned up')}` : ''}`); route();
+      } catch (e) { toast(e.message); }
+    };
+  });
+}
+function bindActivity() {}
+// ---- missed searches: what agents looked for and couldn't find ----
+function searchPanelHTML(ss) {
+  const tot = ss.totals;
+  if (!tot.total) return '';
+  const pct = n => Math.round(100 * n / tot.total);
+  const misses = ss.misses.slice(0, 8);
+  return `<div class="panel" style="padding:14px 18px;margin-bottom:18px" id="srchp">
+    <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;justify-content:space-between"><div><b>${t('Tool searches')}</b> <span class="mute small">${t('last {n} days', { n: ss.days })}</span></div>
+      <div class="small mute">${pl(tot.total, '{n} search', '{n} searches')} · ${t('{pct}% exact match', { pct: pct(tot.strict) })} · ${pl(tot.loose, '{n} loose match', '{n} loose matches')} · <b style="color:${tot.miss ? 'var(--warn)' : 'inherit'}">${t('{n} not found', { n: tot.miss })}</b></div></div>
+    ${misses.length ? `<p class="help" style="margin:10px 0 6px">${t('Things agents searched for but couldn\'t find in any connected tool. A search that keeps coming up usually points to a missing connection.')}</p>
+      ${misses.map(m => `<div class="mrow" style="display:flex;gap:12px;align-items:center;padding:7px 0;border-top:1px solid var(--line2)"><span class="mono" style="min-width:0;flex:1;overflow-wrap:anywhere">${esc(m.query)}${m.server ? ` <span class="mute">· ${t('in {name}', { name: esc(m.server) })}</span>` : ''}</span>
+        <span class="small mute" style="white-space:nowrap">${t('{n}× · last: {agent}, {when}', { n: m.count, agent: esc(m.last_agent), when: esc(relTime(m.last_at)) })}</span>
+        <a class="btn ghost" style="height:28px" href="#discover?q=${enc(m.query)}">${t('Search the catalog')}</a>
+        <button class="ghost" style="height:28px" data-miss="${esc(m.query)}" data-srv="${esc(m.server || '')}" aria-label="${t('Dismiss')}" title="${t('Dismiss')}">${I.x}</button></div>`).join('')}
+      ${ss.misses.length > misses.length ? `<p class="help">${t('+{n} more searches', { n: ss.misses.length - misses.length })}</p>` : ''}`
+    : tot.miss && !ss.records_queries ? `<p class="help" style="margin:10px 0 0">${t('Tool arguments are set to "Nothing" in the log settings, so the text of searches that found nothing is not stored, only counted.')}</p>` : ''}
+  </div>`;
+}
+function bindSearchPanel() {
+  $$('[data-miss]').forEach(b => b.onclick = async () => {
+    try { await api('DELETE', `/api/search-misses?query=${enc(b.dataset.miss)}&server=${enc(b.dataset.srv)}`); b.closest('.mrow').remove(); }
+    catch (e) { toast(e.message); }
+  });
+}
+views.activity = async ({ params }) => {
+  const agent = params.get('agent') || '', q = params.get('q') || '', status = params.get('status') || '';
+  const [agents, ast, ss] = await Promise.all([api('GET', '/api/agents'), api('GET', '/api/settings/audit'), api('GET', '/api/search-stats?days=30')]);
+  const list = await activityList({ agent, q, status });
+  views.activity.after = () => {
+    const go = patch => { const p = new URLSearchParams({ agent, q, status, ...patch }); [...p.keys()].forEach(k => !p.get(k) && p.delete(k)); location.hash = 'activity?' + p; };
+    $('#evag').onchange = e => go({ agent: e.target.value });
+    let t; $('#evq').oninput = e => { clearTimeout(t); t = setTimeout(() => go({ q: e.target.value }), 400); };
+    $$('#evst button').forEach(b => b.onclick = () => go({ status: b.dataset.s }));
+    if (q) { const i = $('#evq'); i.focus(); i.setSelectionRange(q.length, q.length); }
+    $('#aset').onclick = () => auditSettingsSheet(ast);
+    bindSearchPanel();
+  };
+  const argTxt = { full: t('tool arguments are stored with their values (anything that looks like a password or token is masked)'), keys: t('only the names of tool arguments are stored'), none: t('tool arguments are not stored') }[ast.args];
+  return `<div class="head"><div><h1>${t('Activity')}</h1><p class="lede">${t('Everything your agents and the gateway do. Entries are kept for {n} days; {args}.', { n: ast.retention_days, args: argTxt })}</p></div>
+      <div class="actions"><button id="aset">${t('Log settings')}</button></div></div>
+    <div class="toolbar"><input type="search" id="evq" placeholder="${t('Search tools, connections or errors')}" value="${esc(q)}" style="height:34px;font-size:14px">
+      <select id="evag" style="width:auto;height:34px"><option value="">${t('All agents')}</option>${['gateway', 'admin-ui', 'ui:test', ...agents.map(a => a.id)].map(a => `<option ${a === agent ? 'selected' : ''} value="${esc(a)}">${esc({ 'admin-ui': t('admin panel'), 'ui:test': t('panel tests') }[a] || a)}</option>`).join('')}</select>
+      <div class="seg" id="evst"><button data-s="" class="${!status ? 'on' : ''}">${t('All')}</button><button data-s="problems" class="${status === 'problems' ? 'on' : ''}">${t('Problems')}</button></div></div>
+    ${!agent && !q && !status ? searchPanelHTML(ss) : ''}${list}`;
+};
+
+// ---------------------------------------------------------------- Turkish
+const TR = {
+  'Login required': 'Giriş gerekli',
+  'just now': 'az önce',
+  '{n} min ago': '{n} dk önce',
+  '{n} h ago': '{n} sa önce',
+  '{n} day ago': '{n} gün önce',
+  '{n} days ago': '{n} gün önce',
+  'Copy': 'Kopyala',
+  'Copied': 'Kopyalandı',
+  'Couldn\'t copy; select it manually': 'Kopyalanamadı; elle seçin',
+  'Off': 'Kapalı',
+  'Awaiting approval': 'Onay bekliyor',
+  'An agent changed the command this connection runs or the address its credentials are sent to. It stays off until you approve.': 'Bir agent bu bağlantının çalıştırdığı komutu ya da bilgilerin gönderildiği adresi değiştirdi. Sen onaylayana kadar çalışmaz.',
+  'Tools changed': 'Tool\'lar değişti',
+  '{n} tool is new or has a changed description/schema. Agents can\'t see or call it until you review and approve.': '{n} tool yeni eklendi ya da açıklaması/şeması değişti. Sen inceleyip onaylayana kadar agent\'lar bunları göremez ve çağıramaz.',
+  '{n} tools are new or have a changed description/schema. Agents can\'t see or call them until you review and approve.': '{n} tool yeni eklendi ya da açıklaması/şeması değişti. Sen inceleyip onaylayana kadar agent\'lar bunları göremez ve çağıramaz.',
+  'Credentials missing': 'Bilgi eksik',
+  'The credentials needed to connect are not in the vault.': 'Bağlanmak için gereken bilgiler kasada yok.',
+  'OAuth client required': 'OAuth istemcisi gerekli',
+  'This service doesn\'t support automatic client registration. Enter an OAuth client (Client ID and secret) once under Settings.': 'Bu servis otomatik uygulama kaydını desteklemiyor. Ayarlar\'dan bir kerelik bir OAuth istemcisi (Client ID ve secret) girmen gerekiyor.',
+  'Sign-in needed': 'Giriş bekliyor',
+  'You need to sign in with your account.': 'Hesabınla giriş yapman gerekiyor.',
+  'Can\'t connect': 'Bağlanamıyor',
+  'Connection error.': 'Bağlantı hatası.',
+  'Connecting': 'Bağlanıyor',
+  'Not signed in': 'Giriş yapılmadı',
+  'The service lists its tools, but you haven\'t signed in, so they won\'t work.': 'Servis tool listesini veriyor ama hesabınla giriş yapılmadı; tool\'lar çalışmaz.',
+  'Connected': 'Bağlı',
+  'Ready': 'Hazır',
+  'Not connected yet': 'Henüz bağlanmadı',
+  'Hasn\'t connected yet.': 'Henüz hiç bağlanılmadı.',
+  'Connections': 'Bağlantılar',
+  'Discover': 'Keşfet',
+  'Agents': 'Agent\'lar',
+  'Vault': 'Kasa',
+  'Activity': 'Etkinlik',
+  'Needs attention': 'Dikkat isteyen',
+  'Log out': 'Çıkış',
+  'Admin panel': 'Yönetim paneli',
+  'Sign in with your gateway password.': 'Gateway parolanla gir.',
+  'Password': 'Parola',
+  'No panel password has been set yet. In a terminal, get a one-time sign-in link or set a password with:': 'Henüz panel parolası belirlenmemiş. Terminalde şu komutla tek kullanımlık giriş bağlantısı alabilir ya da parola belirleyebilirsin:',
+  'Sign-in failed': 'Giriş başarısız',
+  'Sign-in': 'Giriş',
+  'Preparing the sign-in page…': 'Giriş sayfası hazırlanıyor…',
+  'The connection was deleted.': 'Bağlantı silinmiş.',
+  'This service doesn\'t support automatic client registration; enter an OAuth client under Settings.': 'Bu servis otomatik uygulama kaydını desteklemiyor; Ayarlar\'dan bir OAuth istemcisi gir.',
+  'Sign-in wasn\'t completed within 15 minutes. Try again.': 'Giriş 15 dakika içinde tamamlanmadı. Tekrar dene.',
+  'Connecting {name}…': '{name} bağlanıyor…',
+  'Couldn\'t connect.': 'Bağlanamadı.',
+  'Sign in on the tab that just opened': 'Açılan sekmede giriş yap',
+  'Once you approve the {name} consent screen, the connection completes here on its own.': '{name} izin ekranını onayladığında bağlantı burada kendiliğinden tamamlanır.',
+  'Reopen the sign-in page': 'Giriş sayfasını yeniden aç',
+  'OAuth client required.': 'OAuth istemcisi gerekli.',
+  'Go to Settings': 'Ayarlar\'a git',
+  'Signed in to {name}': '{name} hesabına giriş yapıldı',
+  '{name} connected': '{name} bağlandı',
+  '{n} tool is now available to agents.': '{n} tool agent\'lara açıldı.',
+  '{n} tools are now available to agents.': '{n} tool agent\'lara açıldı.',
+  'active now': 'şu an aktif',
+  'never connected': 'hiç bağlanmadı',
+  '+{n} agents': '+{n} agent',
+  'no agents yet': 'henüz agent yok',
+  '{n} tools': '{n} tool',
+  '+{n} connection': '+{n} bağlantı',
+  '+{n} connections': '+{n} bağlantı',
+  'no connections yet': 'henüz bağlantı yok',
+  'Agents reach {n} connection through the gateway': 'Agent\'lar gateway üzerinden {n} bağlantıya erişiyor',
+  'Agents reach {n} connections through the gateway': 'Agent\'lar gateway üzerinden {n} bağlantıya erişiyor',
+  'Enter credentials': 'Bilgileri gir',
+  'Sign in': 'Giriş yap',
+  'Enter OAuth client': 'OAuth istemcisi gir',
+  'Review': 'İncele',
+  'Close': 'Kapat',
+  '{n} call in 24h': '24 saatte {n} çağrı',
+  '{n} calls in 24h': '24 saatte {n} çağrı',
+  'last used {when}': 'son kullanım {when}',
+  'not used yet': 'henüz kullanılmadı',
+  'Your agents know a single address: <span class="mono">{url}/mcp</span>. Every service behind it is listed here.': 'Agent\'ların tek bir adresi biliyor: <span class="mono">{url}/mcp</span>. Arkasındaki her servis burada.',
+  'Add connection': 'Bağlantı ekle',
+  'No agent has connected yet.': 'Henüz hiçbir agent bağlanmadı.',
+  'Get the command to connect Claude Code or another agent on the Agents page.': 'Claude Code\'u ya da başka bir agent\'ı bağlamak için komutu Agent\'lar sayfasından al.',
+  'Waiting on you': 'Senden bekleyenler',
+  'All connections': 'Bütün bağlantılar',
+  'No connections yet': 'Henüz bağlantı yok',
+  'Add GitHub, Cloudflare, a database, or any of the 300+ services in the Claude directory.': 'GitHub, Cloudflare, bir veritabanı ya da Claude dizinindeki 300\'den fazla servisten birini ekle.',
+  'Go to Discover': 'Keşfet\'e git',
+  'No such connection': 'Bu bağlantı yok',
+  'It may have been deleted.': 'Silinmiş olabilir.',
+  'Tools': 'Tool\'lar',
+  'Settings': 'Ayarlar',
+  'Review and approve': 'İncele ve onayla',
+  'Refresh': 'Yenile',
+  'Connect': 'Bağlan',
+  'Turned on': 'Açıldı',
+  'Turned off': 'Kapatıldı',
+  'Agents cannot see a connection that is off': 'Kapalı bağlantı agent\'lara görünmez',
+  'On': 'Açık',
+  'No tool list yet': 'Tool listesi henüz yok',
+  'Once connected, this service\'s tools are listed here.': 'Bağlantı kurulduğunda bu servisin tool\'ları burada listelenir.',
+  'Search tools': 'Tool ara',
+  'Bulk selection': 'Toplu seçim',
+  'Turn all on': 'Hepsini aç',
+  'Only read-only': 'Sadece okuyanlar',
+  'No agent can see the tools you turn off. For per-agent limits, use the Agents page.': 'Kapattığın tool\'ları hiçbir agent göremez. Agent bazında kısıtlama için Agent\'lar sayfasını kullan.',
+  '{name} enabled': '{name} açık',
+  'new, awaiting approval': 'yeni, onay bekliyor',
+  'changed, awaiting approval': 'değişti, onay bekliyor',
+  'read-only': 'okur',
+  'destructive': 'siler/değiştirir',
+  'Review and approve the change first': 'Önce değişikliği incele ve onayla',
+  'Try': 'Dene',
+  'left out if empty': 'boş bırakılırsa gönderilmez',
+  'one value per line': 'her satıra bir değer',
+  'required': 'zorunlu',
+  '{name} is required': '{name} zorunlu',
+  '{name}: must be an integer': '{name}: tam sayı olmalı',
+  '{name}: must be a number': '{name}: sayı olmalı',
+  '{name}: not valid JSON': '{name}: geçerli JSON değil',
+  '{n} characters of base64': '{n} karakter base64',
+  'Structured output': 'Yapılandırılmış çıktı',
+  'Input format': 'Girdi biçimi',
+  'Run as': 'Kimin adına',
+  'Admin (unrestricted)': 'Yönetici (kısıtlamasız)',
+  'This tool takes no arguments.': 'Bu tool argüman almıyor.',
+  'This tool can delete or modify data; I understand it runs against my real account.': 'Bu tool veri silebilir ya da değiştirebilir; gerçek hesabında çalışacağını biliyorum.',
+  'Run': 'Çalıştır',
+  'Check permission only': 'Sadece izni kontrol et',
+  'This makes a real call; it shows up in Activity as a <b>panel test</b>.': 'Gerçek bir çağrı yapılır; Etkinlik\'te <b>panel denemesi</b> olarak görünür.',
+  'Input schema': 'Girdi şeması',
+  'Arguments must be a JSON object': 'Argümanlar bir JSON nesnesi olmalı',
+  'Arguments are not valid JSON': 'Argümanlar geçerli JSON değil',
+  'First confirm that this tool may modify data': 'Önce bu tool\'un veriyi değiştirebileceğini onayla',
+  'Running…': 'Çalışıyor…',
+  'Allowed': 'İzin var',
+  'Blocked: {reason}': 'Engelli: {reason}',
+  'Returned an error': 'Hata döndü',
+  'Succeeded': 'Başarılı',
+  '{on}/{all} tools on': '{on}/{all} tool açık',
+  'All tools on': 'Bütün tool\'lar açık',
+  'Sign in with account if needed': 'Gerekirse hesapla giriş',
+  'Sign in with account (OAuth)': 'Hesapla giriş (OAuth)',
+  'No sign-in / via headers': 'Giriş yok / header ile',
+  'Name': 'Ad',
+  'ID': 'Kimlik',
+  'agents see it as <span class="mono">{id}.tool</span>': 'agent\'lar <span class="mono">{id}.tool</span> olarak görür',
+  'Description': 'Açıklama',
+  'agents see this; say what it is for': 'agent\'lar bunu görür; neye yaradığını yaz',
+  'Purpose': 'Amaç',
+  'which account, environment or project this connection is for': 'bu bağlantı hangi hesap, ortam ya da proje için',
+  'e.g. Personal account · Company prod (read-only)': 'ör. Kişisel hesap · Şirket prod ortamı (salt okunur)',
+  'Added as <span class="mono">[purpose]</span> to the start of every tool description of this connection. When two connections look alike (say, two Cloudflare accounts), the agent uses it to pick the right one. Only you can change this field; agents cannot.': 'Bu bağlantının her tool açıklamasının başına <span class="mono">[amaç]</span> olarak eklenir. Benzer iki bağlantı varsa (iki Cloudflare hesabı gibi) agent doğrusunu buna bakarak seçer. Bu alanı yalnızca sen değiştirebilirsin; agent\'lar değiştiremez.',
+  'URL': 'Adres',
+  'Headers <span class="hint">one per line, <span class="mono">Name: value</span>. For a secret use <span class="mono">${secret:NAME}</span></span>': 'Header\'lar <span class="hint">her satıra bir tane, <span class="mono">Ad: değer</span>. Şifre için <span class="mono">${secret:AD}</span></span>',
+  'This connection runs inside the gateway; there is no separate program or URL.': 'Bu bağlantı gateway\'in içinde çalışır; ayrı bir program ya da adres yoktur.',
+  'Manage its API keys under <a href="#vault">Vault &gt; Gemini key pool</a>.': 'API anahtarlarını <a href="#vault">Kasa &gt; Gemini anahtar havuzu</a> bölümünden yönetirsin.',
+  'Command': 'Komut',
+  'Arguments': 'Argümanlar',
+  'one per line': 'her satıra bir tane',
+  'Environment variables <span class="hint">one per line, <span class="mono">NAME=value</span>. For a secret use <span class="mono">${secret:NAME}</span></span>': 'Ortam değişkenleri <span class="hint">her satıra <span class="mono">AD=değer</span>. Şifre için <span class="mono">${secret:AD}</span></span>',
+  'Save': 'Kaydet',
+  'Credentials': 'Kimlik bilgileri',
+  'Sign-in type': 'Giriş türü',
+  'Session': 'Oturum',
+  'Signed in; the token is in the vault and is refreshed when it expires.': 'Giriş yapılmış; token kasada, süresi dolunca yenilenir.',
+  'Not signed in yet.': 'Henüz giriş yapılmadı.',
+  'Sign out': 'Oturumu kapat',
+  'OAuth app': 'OAuth uygulaması',
+  'Uses from the vault': 'Kasadan kullandıkları',
+  'missing': 'eksik',
+  'set': 'ayarlı',
+  'None': 'Yok',
+  'using your own client': 'kendi istemcin kullanılıyor',
+  'using automatic registration': 'otomatik kayıt kullanılıyor',
+  'Some services, such as Google and GitHub, don\'t support automatic client registration. For those, create an OAuth client once in the service\'s developer console and enter its details here.': 'Google ve GitHub gibi bazı servisler otomatik uygulama kaydını desteklemez. Bu durumda servisin geliştirici konsolunda bir kerelik bir OAuth istemcisi oluşturup bilgilerini buraya girersin.',
+  ' For Google: Google Cloud Console > Google Auth Platform > Clients > "Web application", add the redirect URL below and tick "Use this client for an AI-powered agent"; also enable the relevant API.': ' Google için: Google Cloud Console > Google Auth Platform > Clients > "Web application", aşağıdaki yönlendirme adresini ekle ve "Use this client for an AI-powered agent" kutusunu işaretle; ilgili API\'yi de etkinleştir.',
+  'Redirect (callback) URL': 'Yönlendirme (callback) adresi',
+  'saved; type to replace': 'kayıtlı; değiştirmek için yaz',
+  'Save and sign in': 'Kaydet ve giriş yap',
+  'Advanced: edit the configuration as JSON': 'Gelişmiş: yapılandırmayı JSON olarak düzenle',
+  'Save JSON': 'JSON\'u kaydet',
+  'Server output (stderr)': 'Sunucu çıktısı (stderr)',
+  'Remove connection': 'Bağlantıyı kaldır',
+  'Its settings are deleted. Credentials in the vault are kept.': 'Ayarlar silinir. Kasadaki bilgiler kalır.',
+  'Remove': 'Kaldır',
+  'Saved': 'Kaydedildi',
+  'Client ID is required': 'Client ID gerekli',
+  'Client secret is required': 'Client secret gerekli',
+  'Sign out of this connection? You will be asked to sign in again the next time it is used.': 'Bu bağlantının oturumu kapatılsın mı? Bir sonraki kullanımda tekrar giriş istenir.',
+  'Signed out': 'Oturum kapatıldı',
+  'Remove {name}?': '{name} kaldırılsın mı?',
+  'Removed': 'Kaldırıldı',
+  'Transport': 'Çalışma şekli',
+  'Environment variables': 'Ortam değişkenleri',
+  'Headers': 'Header\'lar',
+  'OAuth scopes': 'OAuth izinleri',
+  '{n} line unchanged': '{n} satır aynı',
+  '{n} lines unchanged': '{n} satır aynı',
+  'schema unchanged': 'şema aynı',
+  'new tool': 'yeni tool',
+  'changed': 'değişti',
+  'approved version: {when}': 'onaylanan sürüm: {when}',
+  '(unchanged)': '(aynı)',
+  '(empty)': '(boş)',
+  'Show schema': 'Şemayı göster',
+  'An agent added a new connection': 'Bir agent yeni bir bağlantı ekledi',
+  'An agent changed the settings': 'Bir agent ayarları değiştirdi',
+  'The service changed its tools': 'Servis tool\'larını değiştirdi',
+  'If you approve, this connection runs with the settings below. Reject it if you see an address or command you don\'t recognize.': 'Onaylarsan bu bağlantı aşağıdaki ayarlarla çalışır. Tanımadığın bir adres ya da komut görüyorsan reddet.',
+  'Runs a command on this Mac:': 'Bu Mac\'te komut çalıştırır:',
+  'Credentials it will use from the vault:': 'Kasadan kullanacağı bilgiler:',
+  'sent to <b>{host}</b>.': '<b>{host}</b> adresine gönderilir.',
+  'Tool changes': 'Tool değişiklikleri',
+  'These tools\' name, description or input schema differ from the version you last approved (or the tool is new). Agents read descriptions as instructions; until you approve, these tools are hidden from agents and can\'t be called.': 'Bu tool\'ların adı, açıklaması ya da girdi şeması son onayladığın sürümden farklı (ya da tool yeni). Agent\'lar açıklamayı talimat gibi okur; sen onaylayana kadar bu tool\'lar agent\'lara gösterilmez ve çağrılamaz.',
+  'Check whether the description gives the agent new instructions: reject it if it asks the agent to send data elsewhere, read files or ignore its rules.': 'Açıklamada agent\'a yeni bir talimat verilip verilmediğine bak: başka bir yere veri göndermesi, dosya okuması ya da kuralları yok sayması isteniyorsa reddet.',
+  'If you reject, the connection is deleted.': 'Reddedersen bağlantı silinir.',
+  'If you reject, the last approved settings are restored.': 'Reddedersen son onayladığın ayarlara geri dönülür.',
+  ' Because the URL changed, approving deletes the saved session and you will be asked to sign in again.': ' Adres değiştiği için onaylarsan kayıtlı oturum silinir ve yeniden giriş istenir.',
+  'If you reject, these tools are turned off. You can turn them back on from the Tools tab; they will ask for approval again.': 'Reddedersen bu tool\'lar kapatılır. Tool\'lar sekmesinden yeniden açabilirsin; açtığında yine onay ister.',
+  'Reject': 'Reddet',
+  'Later': 'Sonra',
+  'Approve': 'Onayla',
+  'Approved ({n} tool)': 'Onaylandı ({n} tool)',
+  'Approved ({n} tools)': 'Onaylandı ({n} tool)',
+  'Approved': 'Onaylandı',
+  'Rejected; connection deleted': 'Reddedildi, bağlantı silindi',
+  'Rejected; previous settings restored': 'Reddedildi, eski ayarlara dönüldü',
+  'Rejected; tools turned off': 'Reddedildi, tool\'lar kapatıldı',
+  'Account sign-in': 'Hesapla giriş',
+  'One-time setup': 'Bir kerelik kurulum',
+  'With a key': 'Anahtar ile',
+  'Connection details': 'Bağlantı bilgisi',
+  'No sign-in': 'Giriş yok',
+  'Sign-in if needed': 'Gerekirse giriş',
+  'Featured': 'Önerilen',
+  'All': 'Tümü',
+  'Claude directory': 'Claude dizini',
+  'My templates': 'Şablonlarım',
+  'Community': 'Topluluk',
+  'My template': 'Şablonum',
+  'Pick a service. Sign in or enter a key if needed, and your agents can start using it right away. The Claude directory has {n} services.': 'Bir servis seç. Gerekiyorsa giriş yaparsın ya da anahtarını girersin; agent\'ların hemen kullanmaya başlar. Claude dizininde {n} servis var.',
+  'Your own template': 'Kendi şablonun',
+  'Search services': 'Servis ara',
+  'Added': 'Ekli',
+  '{cmds} required': '{cmds} gerekli',
+  'Community registry': 'Topluluk kayıtları',
+  'The official MCP Registry has thousands of entries, most of them experimental. Type above to search it.': 'Resmi MCP Registry binlerce kayıt içeriyor; çoğu deneysel. Aramak için yukarıya bir şey yaz.',
+  'Loading…': 'Yükleniyor…',
+  'Nothing found for “{q}”': '“{q}” bulunamadı',
+  'You can also search the community registry or add your own template.': 'Topluluk kayıtlarında da arayabilir ya da kendi şablonunu ekleyebilirsin.',
+  'You can add your own template.': 'Kendi şablonunu ekleyebilirsin.',
+  'Search the community': 'Toplulukta ara',
+  'Show {n} more': '{n} tane daha göster',
+  'Company database': 'Şirket veritabanı',
+  'Main PostgreSQL (read-only)': 'Ana PostgreSQL (salt okunur)',
+  'Connection URI': 'Bağlantı adresi',
+  'postgresql://user:password@host:5432/db': 'postgresql://kullanici:sifre@host:5432/db',
+  'Add a service you install often to the catalog': 'Sık kurduğun bir servisi kataloğa ekle',
+  'Use <span class="mono">{{param}}</span> in the template. Fields marked <span class="mono">secret: true</span> are stored encrypted in the vault. You can install several connections from one template under different IDs (e.g. one per database).': 'Şablonda <span class="mono">{{param}}</span> kullan. <span class="mono">secret: true</span> olan alanlar kasaya şifreli yazılır. Aynı şablondan farklı kimliklerle birden çok bağlantı kurabilirsin (ör. her veritabanı için bir tane).',
+  'Cancel': 'Vazgeç',
+  'Add template': 'Şablonu ekle',
+  'Template added': 'Şablon eklendi',
+  'No sign-in needed': 'Giriş gerekmez',
+  'optional': 'isteğe bağlı',
+  ' Stored encrypted in the vault; agents cannot see it.': ' Kasaya şifreli yazılır; agent\'lar göremez.',
+  'Where do I find this?': 'Nereden bulunur?',
+  'When you click Add, the {name} sign-in screen opens in a new tab. Once you approve, the connection is set up automatically; the session is kept in the vault and refreshed when it expires.': 'Ekle\'ye bastığında {name} giriş ekranı yeni sekmede açılır. Onayladığında bağlantı kendiliğinden kurulur; oturum kasada saklanır ve süresi dolunca yenilenir.',
+  'If the service asks you to sign in, a sign-in screen opens in a new tab.': 'Servis giriş isterse yeni sekmede giriş ekranı açılır.',
+  'No sign-in needed; just click Add.': 'Giriş gerekmiyor; Ekle\'ye basman yeterli.',
+  'Open setup page': 'Kurulum sayfasını aç',
+  'Create token': 'Token oluştur',
+  'Callback URL': 'Callback adresi',
+  'paste this into the app settings': 'uygulama ayarlarına bunu yapıştır',
+  'How should it connect?': 'Nasıl bağlanılsın?',
+  'documentation': 'dokümantasyon',
+  'More info': 'Daha fazla bilgi',
+  'The agent <b>{agent}</b> added this template. Before adding it, check the command and URL in the "Advanced" section below.': 'Bu şablonu <b>{agent}</b> agent\'ı ekledi. Eklemeden önce aşağıdaki "Gelişmiş" bölümünde komutu ve adresi kontrol et.',
+  'Already added: <b>{ids}</b>. You can add a second connection for another account or database.': 'Zaten ekli: <b>{ids}</b>. Başka bir hesap ya da veritabanı için ikinci bir bağlantı ekleyebilirsin.',
+  'This service needs <span class="mono">{cmds}</span>, but it was not found on this Mac.': 'Bu servis için <span class="mono">{cmds}</span> gerekiyor ama bu Mac\'te bulunamadı.',
+  ' To install it, run this in a terminal: <span class="mono">curl -LsSf https://astral.sh/uv/install.sh | sh</span>': ' Kurmak için terminalde: <span class="mono">curl -LsSf https://astral.sh/uv/install.sh | sh</span>',
+  'Tools ({n})': 'Tool\'lar ({n})',
+  'Advanced': 'Gelişmiş',
+  'ID <span class="hint">agents see the tools as <span class="mono">id.tool</span></span>': 'Kimlik <span class="hint">agent\'lar tool\'ları <span class="mono">kimlik.tool</span> olarak görür</span>',
+  'Add another connection': 'Yeni bağlantı ekle',
+  'Add and connect': 'Ekle ve bağlan',
+  'Adding…': 'Ekleniyor…',
+  'Enter the missing credentials': 'Eksik bilgileri gir',
+  'Open connection': 'Bağlantıyı aç',
+  'Done': 'Tamam',
+  'Default tool mode: {mode}': 'Varsayılan tool sunumu: {mode}',
+  'Apps': 'Uygulamalar',
+  'Programs you write reach the provider\'s API through the gateway. You give the program an app key instead of a real API key; the real keys stay in the vault, and when one hits its quota the gateway moves on to the next.': 'Kendi yazdığın programlar sağlayıcı API\'sine gateway üzerinden gider. Programa gerçek API anahtarı yerine bir uygulama anahtarı verirsin; gerçek anahtarlar kasada kalır ve biri kotaya takılınca gateway sıradakine geçer.',
+  'Add app': 'Uygulama ekle',
+  'No access to any pool': 'Hiçbir havuza erişimi yok',
+  'never used': 'hiç kullanılmadı',
+  'No apps yet. If a program uses the OpenAI, Gemini, Anthropic or ElevenLabs API, add it here; changing its URL and key is all it takes.': 'Henüz uygulama yok. Bir program OpenAI, Gemini, Anthropic ya da ElevenLabs API\'sini kullanıyorsa onu buraya ekle; adres ve anahtar değişikliği yeterli.',
+  'Can use all connections': 'Bütün bağlantılara erişir',
+  'Limited by {n} rule': '{n} kural ile sınırlı',
+  'Limited by {n} rules': '{n} kural ile sınırlı',
+  'Can use all': 'Hepsine erişir',
+  '{n} deny rule': '{n} yasak',
+  '{n} deny rules': '{n} yasak',
+  'Every agent that connects to the gateway has its own key and access settings. It can be Claude Code, Codex, Gemini CLI or an agent you wrote yourself.': 'Gateway\'e bağlanan her agent\'ın kendi anahtarı ve erişim ayarı var. Claude Code, Codex, Gemini CLI ya da kendi yazdığın bir agent olabilir.',
+  'Add agent': 'Agent ekle',
+  'Default tool mode': 'Varsayılan tool sunumu',
+  ' Can be changed per agent.': ' Agent bazında değiştirilebilir.',
+  'Can manage': 'Yönetebilir',
+  'active': 'aktif',
+  'No agents yet': 'Henüz agent yok',
+  'Add your first agent and get its connect command.': 'İlk agent\'ını ekle ve bağlantı komutunu al.',
+  '<app key>': '<uygulama anahtarı>',
+  'Environment variables (the OpenAI SDKs read these)': 'Ortam değişkenleri (OpenAI SDK\'ları bunları okur)',
+  'Environment variables (the Anthropic SDKs read these)': 'Ortam değişkenleri (Anthropic SDK\'ları bunları okur)',
+  'New app': 'Yeni uygulama',
+  'The app key is shown once after you save': 'Kaydedince uygulama anahtarı bir kez gösterilir',
+  'Last used: {when}': 'Son kullanım: {when}',
+  'never': 'hiç',
+  'Podcast maker': 'Podcast üretici',
+  'Which key pools can it use?': 'Hangi anahtar havuzlarını kullanabilir?',
+  '{n} key': '{n} anahtar',
+  '{n} keys': '{n} anahtar',
+  'No key pools yet; add one on the Vault page first.': 'Henüz anahtar havuzu yok; önce Kasa sayfasından bir havuz ekle.',
+  'Key lifetime': 'Anahtar süresi',
+  'if you change it, it counts from today': 'değiştirirsen süre bugünden başlar',
+  'The app key only works with the pools you pick; it gives no access to MCP or this panel. The gateway strips any credentials the app sends and adds a key from the pool. Request and response bodies are not logged; Activity shows only the path, the status and the name of the key used.': 'Uygulama anahtarı yalnızca seçtiğin havuzlarla çalışır; MCP\'ye ya da panele erişim vermez. Gateway, uygulamanın gönderdiği bütün kimlik bilgilerini siler ve havuzdan bir anahtar ekler; istek ve yanıt içerikleri kaydedilmez, Etkinlik\'te yalnızca yol, durum ve kullanılan anahtarın adı görünür.',
+  'Usage': 'Kullanım',
+  'Pick a pool.': 'Bir havuz seç.',
+  'For security, the key is only shown when it is created. If you lost it, create a new one; the old one stops working immediately.': 'Anahtar güvenlik için yalnızca oluşturulurken gösterilir. Kaybettiysen yenisini oluştur; eskisi hemen geçersiz olur.',
+  'Pairing code': 'Eşleştirme kodu',
+  'Show a new key': 'Yeni anahtarı göster',
+  'Delete': 'Sil',
+  'The app key is ready.': 'Uygulama anahtarı hazır.',
+  ' It won\'t be shown again after you close this screen. In your program, use it in place of the API key, and the URL below in place of the API URL.': ' Bu ekranı kapattıktan sonra tekrar gösterilmez. Programında API anahtarı yerine bunu, API adresi yerine aşağıdaki adresi kullan.',
+  'App key': 'Uygulama anahtarı',
+  'This app can\'t use any pool yet.': 'Bu uygulama henüz hiçbir havuzu kullanamıyor.',
+  'When the code is used, a new key is created for this app and the current key stops working. Continue?': 'Kod kullanıldığında bu uygulama için yeni bir anahtar üretilir ve şu anki anahtar geçersiz olur. Devam edilsin mi?',
+  'The old key stops working immediately. Continue?': 'Eski anahtar hemen geçersiz olur. Devam edilsin mi?',
+  'Delete {name}? Its key stops working immediately.': '{name} silinsin mi? Anahtarı hemen geçersiz olur.',
+  'Deleted': 'Silindi',
+  'The agent sees 5 general tools and finds the real ones by searching. Context stays very small; best when there are many tools.': 'Agent 5 genel tool görür ve gerçek tool\'ları aramayla bulur. Bağlam çok küçük kalır; çok sayıda tool varsa en iyisi.',
+  'Every tool the agent may use is listed directly (server__tool). No search step, but all schemas sit in the context.': 'Agent\'ın kullanabileceği her tool doğrudan listelenir (sunucu__tool). Arama adımı yok ama bütün şemalar bağlamda durur.',
+  'Auto': 'Otomatik',
+  'Direct when the agent sees few tools, Lazy when it sees many.': 'Agent\'ın gördüğü tool sayısı azsa Direct, çoksa Lazy.',
+  'No expiry': 'Süresiz',
+  '30 days': '30 gün',
+  '90 days': '90 gün',
+  '180 days': '180 gün',
+  '1 year': '1 yıl',
+  '{n} day': '{n} gün',
+  '{n} days': '{n} gün',
+  'key expired': 'anahtarın süresi doldu',
+  'key expires in {n} day': 'anahtar {n} gün sonra bitiyor',
+  'key expires in {n} days': 'anahtar {n} gün sonra bitiyor',
+  'The key does not expire.': 'Anahtarın süresi yok.',
+  'The key <b>expired</b> on {date}.': 'Anahtar {date} tarihinde <b>sona erdi</b>.',
+  'The key expires on {date}.': 'Anahtar {date} tarihinde sona eriyor.',
+  'run in a terminal; available in every project': 'terminalde çalıştır; bütün projelerde görünür',
+  'the key is written to your shell profile; open a new terminal': 'anahtar kabuk profiline yazılır; yeni terminal aç',
+  'Give it to another agent': 'Başka bir agent\'a ver',
+  'You need to connect to Toolgate. Run this command once in a terminal; the code in it is single-use and valid for 10 minutes. The command writes the key straight into your settings; do not print the key or put it in the chat:\n\n{cmd}\n\nThen reload your MCP connections (/mcp in Claude Code) and call the gateway\'s overview tool.': 'Toolgate\'e bağlanman gerekiyor. Şu komutu terminalde bir kez çalıştır; içindeki kod tek kullanımlık ve 10 dakika geçerli. Komut anahtarı doğrudan ayara yazar, anahtarı ekrana yazdırma ve sohbete koyma:\n\n{cmd}\n\nSonra MCP bağlantılarını yeniden yükle (Claude Code\'da /mcp) ve gateway\'in overview tool\'unu çağır.',
+  'paste it into the chat; the agent runs the command itself': 'sohbete yapıştır; agent komutu kendisi çalıştırır',
+  'Other clients': 'Diğer istemciler',
+  'put the token from the output into the client\'s settings; the token is visible in the terminal': 'çıktıdaki token\'ı istemcinin ayarına koy; token terminalde görünür',
+  'Give to agent': 'Agent\'a ver',
+  'Other': 'Diğer',
+  'Put the app key in an environment variable': 'Uygulama anahtarını bir ortam değişkenine al',
+  'in the terminal where you will run the program': 'programı çalıştıracağın terminalde',
+  'In the program, use the <span class="mono">TOOLGATE_APP_TOKEN</span> variable as the API key and the app\'s pool URL as the API URL (see the examples in the app details).': 'Programda API anahtarı olarak <span class="mono">TOOLGATE_APP_TOKEN</span> değişkenini, API adresi olarak uygulamanın havuz adresini kullan (uygulama ayrıntısındaki örneklere bak).',
+  'Single-use; it must be used within <b data-pexp="{exp}">10:00</b>. When the code is used, a new key is created for {name} and written straight into the client\'s settings; any old key stops working.': 'Tek kullanımlık, <b data-pexp="{exp}">10:00</b> içinde kullanılmalı. Kod kullanılınca {name} için yeni bir anahtar üretilir ve doğrudan istemcinin ayarına yazılır; varsa eski anahtar geçersiz olur.',
+  'expired': 'süresi doldu',
+  'available in every project': 'bütün projelerde görünür',
+  'Other MCP clients': 'Diğer MCP istemcileri',
+  'all tools': 'bütün tool\'ları',
+  'New agent': 'Yeni agent',
+  'A pairing code is shown after you save': 'Kaydedince eşleştirme kodu gösterilir',
+  'Last seen: {when}': 'Son görülme: {when}',
+  'Codex (laptop)': 'Codex (dizüstü)',
+  'What can it access?': 'Neye erişebilir?',
+  'Including ones added later.': 'Yeni eklenenler dahil.',
+  'Only the ones I pick': 'Sadece seçtiklerim',
+  'Pick connections below.': 'Aşağıdan bağlantı seç.',
+  'No connections yet.': 'Henüz bağlantı yok.',
+  'Denied tools <span class="hint">comma-separated; always take precedence. E.g. <span class="mono">*.delete_*</span></span>': 'Yasaklı tool\'lar <span class="hint">virgülle; her zaman önceliklidir. Örn. <span class="mono">*.delete_*</span></span>',
+  'Tool mode': 'Tool sunumu',
+  'Default': 'Varsayılan',
+  'currently {mode}': 'şu an {mode}',
+  'limit: {n} tools': 'sınır: {n} tool',
+  'At most {n} tools are listed; the rest are found by search.': 'En fazla {n} tool listelenir; fazlası aramayla bulunur.',
+  'You can also pick a mode for a single client by adding <span class="mono">?tools=lazy</span> or <span class="mono">?tools=direct</span> to the connection URL. Permissions, approvals and logs are the same in every mode. Agents usually fetch the tool list once at startup, so a change applies after they reconnect.': 'Bağlantı adresine <span class="mono">?tools=lazy</span> ya da <span class="mono">?tools=direct</span> ekleyerek tek bir istemci için de seçebilirsin. İzinler, onaylar ve kayıtlar her modda aynıdır. Agent, tool listesini genelde başlangıçta bir kez alır; değişiklik yeniden bağlanınca geçerli olur.',
+  'Can manage the gateway': 'Gateway\'i yönetebilir',
+  'Can add and remove connections, start sign-ins, and write new credentials to the vault (but not read them).': 'Bağlantı ekleyip kaldırabilir, giriş başlatabilir, kasaya yeni bilgi yazabilir (okuyamaz).',
+  'Advanced: permission rules': 'Gelişmiş: izin kuralları',
+  'Allowed patterns <span class="hint">comma-separated <span class="mono">connection.tool</span> globs</span>': 'İzinli kalıplar <span class="hint">virgülle, <span class="mono">bağlantı.tool</span> glob</span>',
+  'Connection key': 'Bağlantı anahtarı',
+  'What does it see?': 'Ne görüyor?',
+  'Show the key instead of a pairing code': 'Eşleştirme kodu yerine anahtarı göster',
+  'The code writes the key into the client\'s settings without ever showing it; pick this if you\'d rather copy the key yourself.': 'Kod, anahtarı ekrana getirmeden istemcinin ayarına yazar; anahtarı kendin kopyalamak istersen bunu seç.',
+  'currently {mode} for this agent': 'bu agent için şu an {mode}',
+  'The connection key is ready.': 'Bağlantı anahtarı hazır.',
+  ' It won\'t be shown again after you close this screen.': ' Bu ekranı kapattıktan sonra tekrar gösterilmez.',
+  'Pick at least one connection': 'En az bir bağlantı seç',
+  'When the code is used, a new key is created for this agent and the current key stops working. Continue?': 'Kod kullanıldığında bu agent için yeni bir anahtar üretilir ve şu anki anahtar geçersiz olur. Devam edilsin mi?',
+  'The old key will stop working immediately, and you\'ll need to update this agent\'s settings with the new key. Continue?': 'Eski anahtar hemen geçersiz olacak. Bu agent\'ın ayarını yeni anahtarla güncellemen gerekecek. Devam edilsin mi?',
+  'Currently in <b>{mode}</b> mode: {n} tools, ~{size}. When the agent connects, it gets this summary:': 'Şu an <b>{mode}</b> modda: {n} tool, ~{size}. Agent bağlandığında bu özeti alır:',
+  'Cooling down': 'Dinleniyor',
+  'Quota used up': 'Kota doldu',
+  'Invalid': 'Geçersiz',
+  'in {n} min': '{n} dk sonra',
+  'at {time}': '{time}\'de',
+  '{reason}, back {when}': '{reason}, {when} açılır',
+  'Ready to use': 'Kullanıma hazır',
+  'Today: {n} request': 'Bugün {n} istek',
+  'Today: {n} requests': 'Bugün {n} istek',
+  '{n} rate-limited': '{n} kota',
+  '{n} error': '{n} hata',
+  '{n} errors': '{n} hata',
+  'Last: {when}': 'Son: {when}',
+  'Not used yet': 'Henüz kullanılmadı',
+  'Change': 'Değiştir',
+  'The key is sent in the <span class="mono">{header}</span> header': 'Anahtar <span class="mono">{header}</span> başlığıyla gönderilir',
+  '; it never goes into the URL.': '; URL\'ye hiç konmaz.',
+  'Add at least one Gemini API key so your agents can generate speech (TTS). If you add several, the gateway takes turns between them and moves on to the next when one hits its quota.': 'Agent\'ların ses (TTS) üretebilmesi için en az bir Gemini API anahtarı ekle. Birden fazla eklersen gateway aralarında sırayla dağıtır; biri kotaya takılınca diğerine geçer.',
+  'Keys named <span class="mono">{prefix}</span> or <span class="mono">{prefix}_…</span> go into this pool. If you add several, the gateway spreads calls across them and moves on to the next when one hits a rate limit.': 'Bu havuza <span class="mono">{prefix}</span> ya da <span class="mono">{prefix}_…</span> adlı anahtarlar girer. Birden fazla eklersen gateway aralarında dağıtır; biri hız sınırına takılınca diğerine geçer.',
+  '{ready}/{all} ready': '{ready}/{all} hazır',
+  'Add key': 'Anahtar ekle',
+  'Get a key at <a href="{url}" target="_blank" rel="noopener">{host}</a>. ': 'Anahtarı <a href="{url}" target="_blank" rel="noopener">{host}</a> adresinden alabilirsin. ',
+  ' <b>The Gemini connection is off</b>; you can turn it on from the Connections page.': ' <b>Gemini bağlantısı kapalı</b>; Bağlantılar sayfasından açabilirsin.',
+  ' <b>The Gemini connection has been removed.</b>': ' <b>Gemini bağlantısı kaldırılmış.</b>',
+  'Generated files:': 'Üretilen dosyalar:',
+  'For your own programs:': 'Kendi programların için:',
+  '{n} app uses it': '{n} uygulama kullanıyor',
+  '{n} apps use it': '{n} uygulama kullanıyor',
+  'You set the header name and prefix. On a 429, the gateway waits as long as Retry-After says.': 'Başlık adını ve önekini sen belirlersin. 429 gelince Retry-After kadar beklenir.',
+  'The key is sent in the <span class="mono">{header}</span> header. Suggested name: <span class="mono">{prefix}_1</span>': 'Anahtar <span class="mono">{header}</span> başlığıyla gider. Önerilen ad: <span class="mono">{prefix}_1</span>',
+  'Add pool': 'Havuz ekle',
+  'Collect several keys for the same service in one pool': 'Aynı servisin birden fazla anahtarını tek havuzda topla',
+  'Pool settings': 'Havuz ayarları',
+  'Provider': 'Sağlayıcı',
+  'Key name prefix <span class="hint">vault entries named <span class="mono">PREFIX</span> and <span class="mono">PREFIX_*</span> go into this pool</span>': 'Anahtar adı öneki <span class="hint">kasadaki <span class="mono">ÖNEK</span> ve <span class="mono">ÖNEK_*</span> adlı bilgiler bu havuza girer</span>',
+  'Header name': 'Başlık adı',
+  'Value prefix': 'Değer öneki',
+  'API URL': 'API adresi',
+  'Check path': 'Deneme yolu',
+  'GET; optional': 'GET; isteğe bağlı',
+  'The Gemini pool\'s provider and prefix are fixed; the built-in <span class="mono">gemini</span> connection and existing keys rely on them.': 'Gemini havuzunun sağlayıcısı ve öneki sabittir; dahili <span class="mono">gemini</span> bağlantısı ve mevcut anahtarlar bunları kullanır.',
+  'Removing the pool does not delete its keys; they stay in the vault.': 'Havuzu kaldırmak anahtarları silmez; kasada kalırlar.',
+  'Remove pool': 'Havuzu kaldır',
+  'Pool added': 'Havuz eklendi',
+  'Remove the {name} pool? The keys stay in the vault.': '{name} havuzu kaldırılsın mı? Anahtarlar kasada kalır.',
+  'Pool removed': 'Havuz kaldırıldı',
+  'You are adding a new key to the {name} pool. The value is stored encrypted; agents and apps cannot see it.': '{name} havuzuna yeni bir anahtar ekliyorsun. Değer şifreli saklanır; agent\'lar ve uygulamalar göremez.',
+  'Checking…': 'Deneniyor…',
+  'The key works': 'Anahtar çalışıyor',
+  'Failed: {error}': 'Çalışmadı: {error}',
+  'Delete {name}? Connections that use it will stop working.': '{name} silinsin mi? Bunu kullanan bağlantılar çalışmaz.',
+  'Used by: {list}': 'Kullanan: {list}',
+  'Not used by any connection': 'Hiçbir bağlantı kullanmıyor',
+  'Enter value': 'Değer gir',
+  'is kept in the macOS Keychain': 'macOS Anahtar Zinciri\'nde tutulur',
+  'is kept in the <span class="mono">master.key</span> file in the gateway\'s data folder (in an isolated install, only the service user can read that folder)': 'gateway\'in veri klasöründeki <span class="mono">master.key</span> dosyasında tutulur (izole kurulumda bu klasörü yalnızca servis kullanıcısı okuyabilir)',
+  'API keys, tokens and connection credentials are stored here, encrypted. Agents can use them but never see them.': 'API anahtarları, token\'lar ve bağlantı bilgileri burada şifreli durur. Agent\'lar bunları kullanabilir ama hiçbir zaman göremez.',
+  'Add credential': 'Bilgi ekle',
+  'Key pools': 'Anahtar havuzları',
+  'Several keys for the same service: the gateway spreads calls across them, rests a key that hits a rate limit, and disables invalid ones.': 'Aynı servisin birden fazla anahtarı: gateway çağrıları aralarında dağıtır, hız sınırına takılan anahtarı dinlendirir, geçersiz olanı devre dışı bırakır.',
+  'Missing credentials': 'Eksik bilgiler',
+  'A connection is waiting for these': 'Bir bağlantı bunları bekliyor',
+  'Stored credentials': 'Kayıtlı bilgiler',
+  'The vault is empty. Credentials you enter while adding connections are stored here.': 'Kasada henüz bir şey yok. Bağlantı eklerken istenen bilgiler buraya kaydedilir.',
+  'The encryption key {where}. In connection settings, refer to a credential as <span class="mono">${secret:NAME}</span>.': 'Şifreleme anahtarı {where}. Bağlantı ayarlarında bir bilgiyi <span class="mono">${secret:AD}</span> şeklinde kullanabilirsin.',
+  'New credential': 'Yeni bilgi',
+  'Change value': 'Değeri değiştir',
+  'Add to vault': 'Kasaya ekle',
+  'The <b>{list}</b> connection is waiting for this credential.': '<b>{list}</b> bağlantısı bu bilgiyi bekliyor.',
+  'An agent asked for this credential.': 'Bir agent bu bilgiyi istedi.',
+  'Note: {note}': 'Not: {note}',
+  ' The value is never shown to the agent.': ' Değer agent\'a gösterilmez.',
+  'Value': 'Değer',
+  'Note': 'Not',
+  'entered an OAuth client': 'OAuth istemcisi girdi',
+  'approved a change': 'değişikliği onayladı',
+  'rejected a change': 'değişikliği reddetti',
+  'saved a connection': 'bağlantıyı kaydetti',
+  'removed a connection': 'bağlantıyı kaldırdı',
+  'added a connection': 'bağlantı ekledi',
+  'wrote a credential to the vault': 'kasaya bilgi yazdı',
+  'deleted a credential from the vault': 'kasadan bilgi sildi',
+  'added an agent': 'agent ekledi',
+  'changed agent settings': 'agent ayarlarını değiştirdi',
+  'rotated an agent key': 'agent anahtarını yeniledi',
+  'deleted an agent': 'agent sildi',
+  'saved a key pool': 'anahtar havuzunu kaydetti',
+  'removed a key pool': 'anahtar havuzunu kaldırdı',
+  'checked a key': 'anahtarı denedi',
+  'changed the log settings': 'kayıt ayarlarını değiştirdi',
+  'changed the default tool mode': 'varsayılan tool sunumunu değiştirdi',
+  'created a pairing code': 'eşleştirme kodu oluşturdu',
+  'dismissed a missed search': 'bulunamayan aramayı listeden kaldırdı',
+  'added an app': 'uygulama ekledi',
+  'changed app settings': 'uygulama ayarlarını değiştirdi',
+  'rotated an app key': 'uygulama anahtarını yeniledi',
+  'deleted an app': 'uygulama sildi',
+  'called {tool}': '{tool} çağırdı',
+  'got a new key with a pairing code': 'eşleştirme koduyla yeni anahtar aldı',
+  'tried a wrong pairing code': 'yanlış eşleştirme kodu denendi',
+  'rejected': 'reddedildi',
+  ', loose match': ', gevşek eşleşme',
+  ', all': ', hepsi',
+  'searched tools': 'tool aradı',
+  'not found': 'bulunamadı',
+  '{n} result': '{n} sonuç',
+  '{n} results': '{n} sonuç',
+  'looked at tool schemas': 'tool şemalarına baktı',
+  'got the overview': 'özeti aldı',
+  'connected to {name}': '{name} bağlandı',
+  'couldn\'t connect to {name}': '{name} bağlanamadı',
+  'waiting for sign-in to {name}': '{name} için giriş bekleniyor',
+  'sign-in to {name} completed': '{name} için giriş tamamlandı',
+  'sign-in to {name} was denied': '{name} girişi reddedildi',
+  'manage:': 'yönetim:',
+  'Panel test': 'Panel denemesi',
+  'Panel test (as {agent})': 'Panel denemesi ({agent} olarak)',
+  'App {name}': 'Uygulama {name}',
+  'rate limited': 'kota',
+  'awaiting approval': 'onay bekliyor',
+  'blocked': 'engellendi',
+  'error': 'hata',
+  'tool returned an error': 'tool hata döndü',
+  'sign-in required': 'giriş gerekli',
+  'pending': 'bekliyor',
+  'This connection has not been used yet.': 'Bu bağlantı henüz kullanılmadı.',
+  'No entries.': 'Kayıt yok.',
+  'Today': 'Bugün',
+  'Argument names (values not stored):': 'Argüman adları (değerler saklanmadı):',
+  'With values': 'Değerleriyle',
+  'Tool arguments are stored with their values. Fields that look like passwords or tokens are masked. A short excerpt of each successful result is stored too.': 'Tool argümanları değerleriyle saklanır. Şifre, token gibi görünen alanlar gizlenir. Başarılı çağrıların sonucundan kısa bir alıntı da saklanır.',
+  'Names only': 'Sadece adlar',
+  'Only argument names are stored (e.g. title, repo). Values and the results of successful calls are not. The text of tool searches that found nothing is still kept, so you can spot missing connections.': 'Yalnızca argüman adları saklanır (ör. title, repo). Değerler ve başarılı çağrıların sonuçları saklanmaz. Bulunamayan tool aramalarının metni, eksik bağlantıları görebilmen için ayrıca saklanır.',
+  'Nothing': 'Hiçbiri',
+  'Neither tool arguments nor the results of successful calls are stored; only which tool was called and when. The text of searches that found nothing is not stored either, only counted.': 'Tool argümanları ve başarılı çağrıların sonuçları saklanmaz; yalnızca hangi tool\'un ne zaman çağrıldığı kalır. Bulunamayan aramaların metni de saklanmaz, yalnızca sayılır.',
+  'Log settings': 'Kayıt ayarları',
+  'How long, and in how much detail, activity is kept': 'Etkinlik kayıtlarının ne kadar süre ve ne kadar ayrıntılı tutulacağı',
+  'Retention (days)': 'Saklama süresi (gün)',
+  'older entries are deleted hourly': 'daha eski kayıtlar saatte bir silinir',
+  'This was fixed with the <span class="mono">-audit-retention-days</span> flag when the gateway started.': 'Bu süre gateway başlatılırken <span class="mono">-audit-retention-days</span> bayrağıyla sabitlendi.',
+  'Tool arguments': 'Tool argümanları',
+  'Admin actions such as adding a connection or changing settings are security records, so they are kept in every mode (secret fields are masked).': 'Bağlantı ekleme ya da ayar değiştirme gibi yönetim işlemleri güvenlik kaydı olduğu için her modda saklanır (gizli alanlar maskelenir).',
+  'Also clean up older entries to match': 'Eski kayıtları da bu ayara göre temizle',
+  'Arguments and result excerpts stored earlier with their values are deleted. This cannot be undone.': 'Daha önce değerleriyle saklanmış argümanlar ve sonuç alıntıları silinir. Geri alınamaz.',
+  'There is {n} entry': 'Şu an {n} kayıt var',
+  'There are {n} entries': 'Şu an {n} kayıt var',
+  '; the oldest is from {when}': '; en eskisi {when}',
+  '{n} old entry deleted': '{n} eski kayıt silindi',
+  '{n} old entries deleted': '{n} eski kayıt silindi',
+  '{n} entry cleaned up': '{n} kayıt temizlendi',
+  '{n} entries cleaned up': '{n} kayıt temizlendi',
+  'Tool searches': 'Tool aramaları',
+  'last {n} days': 'son {n} gün',
+  '{n} search': '{n} arama',
+  '{n} searches': '{n} arama',
+  '{n} loose match': '{n} gevşek eşleşme',
+  '{n} loose matches': '{n} gevşek eşleşme',
+  '{pct}% exact match': '%{pct} tam eşleşme',
+  '{n} not found': '{n} bulunamadı',
+  'Things agents searched for but couldn\'t find in any connected tool. A search that keeps coming up usually points to a missing connection.': 'Agent\'ların aradığı ama hiçbir bağlı tool\'da bulamadığı şeyler. Sık tekrarlanan bir arama genelde eksik bir bağlantıya işaret eder.',
+  'in {name}': '{name} içinde',
+  '{n}× · last: {agent}, {when}': '{n}× · son: {agent}, {when}',
+  'Search the catalog': 'Katalogda ara',
+  'Dismiss': 'Listeden kaldır',
+  '+{n} more searches': '+{n} arama daha',
+  'Tool arguments are set to "Nothing" in the log settings, so the text of searches that found nothing is not stored, only counted.': 'Kayıt ayarlarında tool argümanları "Hiçbiri" olduğu için bulunamayan aramaların metni saklanmıyor; yalnızca sayılıyor.',
+  'tool arguments are stored with their values (anything that looks like a password or token is masked)': 'tool argümanları değerleriyle saklanır (şifre, token gibi görünenler gizlenir)',
+  'only the names of tool arguments are stored': 'tool argümanlarının yalnızca adları saklanır',
+  'tool arguments are not stored': 'tool argümanları saklanmaz',
+  'Everything your agents and the gateway do. Entries are kept for {n} days; {args}.': 'Agent\'ların ve gateway\'in yaptığı her şey. Kayıtlar {n} gün saklanır; {args}.',
+  'Search tools, connections or errors': 'Tool, bağlantı ya da hata ara',
+  'All agents': 'Bütün agent\'lar',
+  'admin panel': 'yönetim paneli',
+  'panel tests': 'panel denemeleri',
+  'Problems': 'Sorunlar',
+  'Language': 'Dil',
+};
+setLang(LANG, false); renderLangSwitch();
+(async () => { readHash(); if (await ensureSession()) refreshCounts(); route(); })();
+</script>
+</body>
+</html>

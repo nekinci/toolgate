@@ -1,0 +1,62 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - name: cross-compile
+        run: |
+          for t in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            GOOS=${t%/*} GOARCH=${t#*/} go build -o /dev/null . || exit 1
+          done
+
+  # Real isolated install on a fresh runner: service user, permissions,
+  # service manager, health check, then a full purge.
+  install-smoke:
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o bin/toolgate .
+      - name: install (isolated)
+        run: echo 'smoke-test-password' | sudo ./bin/toolgate install --password-stdin
+      - name: check isolation
+        run: |
+          set -x
+          toolgate status
+          if [ "$RUNNER_OS" = Linux ]; then D=/var/lib/toolgate; else D="/Library/Application Support/Toolgate"; fi
+          # the desktop user must not be able to read the data directory
+          if ls "$D" >/dev/null 2>&1; then echo "data directory readable by $(whoami)"; exit 1; fi
+          sudo test -f "$D/gateway.db"
+          sudo test -f "$D/master.key"
+          curl -fsS http://localhost:7777/healthz
+          # agents get 401 without a token
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:7777/mcp)" = 401
+      - name: upgrade in place
+        run: sudo ./bin/toolgate install && curl -fsS http://localhost:7777/healthz
+      - name: uninstall --purge
+        run: |
+          sudo toolgate uninstall --purge
+          ! curl -fsS http://localhost:7777/healthz
+          ! id toolgate 2>/dev/null && ! id _toolgate 2>/dev/null
+      - name: service logs
+        if: failure()
+        run: sudo journalctl -u toolgate --no-pager 2>/dev/null || sudo cat "/Library/Application Support/Toolgate/gateway.log"
